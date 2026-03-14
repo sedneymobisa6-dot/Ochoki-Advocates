@@ -112,9 +112,11 @@ body {
   background:var(--white);
   color:var(--ink);
   overflow-x:hidden;
-  cursor:none;
   -webkit-font-smoothing:antialiased;
   -moz-osx-font-smoothing:grayscale;
+}
+@media(pointer:fine){
+  body { cursor:none; }
 }
 img { max-width:100%; display:block; }
 button { font-family:var(--font-body); }
@@ -262,15 +264,18 @@ nav.scrolled { height:60px; background:rgba(13,13,11,0.98); }
 }
 .mobile-nav.open { display:flex; animation:slideDown 0.35s var(--ease-out); }
 @keyframes slideDown { from{opacity:0;transform:translateY(-10px)} to{opacity:1;transform:translateY(0)} }
-.mobile-nav a {
+.mobile-nav a, .mobile-nav-link {
   color:rgba(253,252,249,0.75);
   font-family:var(--font-display);
   font-size:1.8rem; font-style:italic;
-  cursor:none; padding:1.2rem 0;
-  border-bottom:1px solid rgba(255,255,255,0.07);
-  transition:color 0.2s;
+  cursor:pointer; padding:1.2rem 0;
+  border:none; border-bottom:1px solid rgba(255,255,255,0.07);
+  background:none; text-align:left; width:100%;
+  transition:color 0.2s; display:block;
+  -webkit-tap-highlight-color: rgba(184,150,46,0.2);
 }
-.mobile-nav a:hover { color:var(--gold-lt); }
+.mobile-nav a:hover, .mobile-nav-link:hover,
+.mobile-nav a:active, .mobile-nav-link:active { color:var(--gold-lt); }
 .mobile-nav-cta {
   margin-top:2rem;
   background:var(--gold); color:var(--ink);
@@ -314,9 +319,10 @@ nav.scrolled { height:60px; background:rgba(13,13,11,0.98); }
 .btn {
   display:inline-flex; align-items:center; gap:0.55rem;
   font-size:0.7rem; letter-spacing:0.13em;
-  text-transform:uppercase; cursor:none;
+  text-transform:uppercase; cursor:pointer;
   border:none; transition:all 0.3s var(--ease-out);
   white-space:nowrap;
+  -webkit-tap-highlight-color: rgba(184,150,46,0.2);
 }
 .btn svg { width:13px; height:13px; transition:transform 0.3s; flex-shrink:0; }
 .btn:hover svg { transform:translateX(4px); }
@@ -1046,7 +1052,7 @@ nav.scrolled { height:60px; background:rgba(13,13,11,0.98); }
 </div>
 
 <!-- WHATSAPP FAB -->
-<a id="whatsapp-btn" href="https://wa.me/254700000000?text=Hello%20Ochoki%20%26%20Co.%20Advocates%2C%20I%20would%20like%20to%20book%20a%20free%20consultation." target="_blank" rel="noopener" aria-label="Chat on WhatsApp">
+<a id="whatsapp-btn" href="https://wa.me/254713711953?text=Hello%20Ochoki%20%26%20Co.%20Advocates%2C%20I%20would%20like%20to%20book%20a%20free%20consultation." target="_blank" rel="noopener" aria-label="Chat on WhatsApp">
   <div class="wa-tooltip">Chat on WhatsApp</div>
   <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
@@ -1079,7 +1085,7 @@ nav.scrolled { height:60px; background:rgba(13,13,11,0.98); }
     <li><a onclick="showPage('contact')"  id="nl-contact">Contact</a></li>
   </ul>
   <div class="nav-right">
-    <span class="nav-phone">+254 700 000 000</span>
+    <span class="nav-phone">+254 713 711 953</span>
     <button class="nav-cta" onclick="showPage('contact')">Free Consultation</button>
     <button class="nav-burger" id="navBurger" onclick="toggleMobile()">
       <span></span><span></span><span></span>
@@ -1087,11 +1093,11 @@ nav.scrolled { height:60px; background:rgba(13,13,11,0.98); }
   </div>
 </nav>
 <div class="mobile-nav" id="mobileNav">
-  <a onclick="nav('home')">Home</a>
-  <a onclick="nav('about')">About the Firm</a>
-  <a onclick="nav('practice')">Practice Areas</a>
-  <a onclick="nav('attorneys')">Our Team</a>
-  <a onclick="nav('contact')">Contact</a>
+  <button class="mobile-nav-link" onclick="nav('home')">Home</button>
+  <button class="mobile-nav-link" onclick="nav('about')">About the Firm</button>
+  <button class="mobile-nav-link" onclick="nav('practice')">Practice Areas</button>
+  <button class="mobile-nav-link" onclick="nav('attorneys')">Our Team</button>
+  <button class="mobile-nav-link" onclick="nav('contact')">Contact</button>
   <button class="mobile-nav-cta" onclick="nav('contact')">Book Free Consultation →</button>
 </div>
 
@@ -1132,20 +1138,20 @@ nav.scrolled { height:60px; background:rgba(13,13,11,0.98); }
     <div class="hero-stats">
       <div class="stats-inner">
         <div class="stat-item">
-          <span class="stat-num" data-count="25" data-suffix="+">0+</span>
-          <div class="stat-label">Years in Practice</div>
+          <span class="stat-num" data-count="15" data-suffix="+">0+</span>
+          <div class="stat-label">Years of Service</div>
         </div>
         <div class="stat-item">
-          <span class="stat-num" data-count="1000" data-suffix="+">0+</span>
-          <div class="stat-label">Clients Served</div>
+          <span class="stat-num" data-count="5308" data-suffix="+">0+</span>
+          <div class="stat-label">Cases Handled</div>
         </div>
         <div class="stat-item">
-          <span class="stat-num" data-count="98" data-suffix="%">0%</span>
-          <div class="stat-label">Client Satisfaction</div>
+          <span class="stat-num" data-count="21" data-suffix="+">0+</span>
+          <div class="stat-label">Corporate Clients</div>
         </div>
         <div class="stat-item">
-          <span class="stat-num" data-count="9" data-suffix="">0</span>
-          <div class="stat-label">Practice Areas</div>
+          <span class="stat-num" data-count="6" data-suffix="">0</span>
+          <div class="stat-label">International Partners</div>
         </div>
       </div>
     </div>
@@ -1268,19 +1274,19 @@ nav.scrolled { height:60px; background:rgba(13,13,11,0.98); }
           <div class="t-stars">★★★★★</div>
           <span class="t-quote">"</span>
           <p class="t-text">When our company faced a complex land acquisition dispute, Ochoki &amp; Co. provided clarity when we needed it most. Their thorough understanding of Kenyan property law saved us from a potentially devastating outcome.</p>
-          <div class="t-author">Corporate Client <span class="t-matter">· Property Dispute</span></div>
+          <div class="t-author">Wanjiku Mwangi — Nairobi <span class="t-matter">· Property Dispute</span></div>
         </div>
         <div class="t-card reveal d2">
           <div class="t-stars">★★★★★</div>
           <span class="t-quote">"</span>
           <p class="t-text">I approached Ochoki &amp; Co. after two other firms couldn't help with my tax dispute. Their team not only resolved the immediate issue but restructured my operations to prevent future problems. Worth every shilling.</p>
-          <div class="t-author">Business Owner <span class="t-matter">· Tax &amp; Corporate</span></div>
+          <div class="t-author">James Odhiambo — Kisumu <span class="t-matter">· Tax &amp; Corporate</span></div>
         </div>
         <div class="t-card reveal d4">
           <div class="t-stars">★★★★★</div>
           <span class="t-quote">"</span>
           <p class="t-text">After a workplace accident left me unable to work, I thought my family would lose everything. Ochoki &amp; Co. fought tirelessly for fair compensation and showed genuine compassion throughout. They restored our faith in justice.</p>
-          <div class="t-author">Personal Injury Client <span class="t-matter">· Civil Litigation</span></div>
+          <div class="t-author">Amina Hussein — Nairobi <span class="t-matter">· Civil Litigation</span></div>
         </div>
       </div>
     </div>
@@ -1299,7 +1305,7 @@ nav.scrolled { height:60px; background:rgba(13,13,11,0.98); }
         </button>
       </div>
       <div class="cta-band-info">
-        <p>P.O. Box 2464, Kisii</p>
+        <p>Royal Towers, 3rd Floor, Kisii Town</p>
         <strong>Nyanza Province, Kenya</strong>
         <p style="margin-top:1rem;">Visit our website</p>
         <strong>ochokiadvocates.co.ke</strong>
@@ -1322,7 +1328,7 @@ nav.scrolled { height:60px; background:rgba(13,13,11,0.98); }
         <div class="footer-social" style="margin-top:1.2rem;">
           <a class="social-btn" href="https://www.facebook.com/ochokiadvocates" target="_blank" rel="noopener" title="Facebook">f</a>
           <a class="social-btn" href="#" title="LinkedIn">in</a>
-          <a class="social-btn" href="https://wa.me/254700000000" target="_blank" rel="noopener" title="WhatsApp">w</a>
+          <a class="social-btn" href="https://wa.me/254713711953" target="_blank" rel="noopener" title="WhatsApp">w</a>
         </div>
       </div>
       <div class="footer-col"><h5>Navigate</h5><ul>
@@ -1344,10 +1350,10 @@ nav.scrolled { height:60px; background:rgba(13,13,11,0.98); }
         <li>Immigration Law</li>
       </ul></div>
       <div class="footer-col"><h5>Contact</h5><ul>
-        <li><span>Address</span><br>P.O. Box 2464, Kisii</li>
+        <li><span>Address</span><br>Royal Towers, 3rd Floor, Kisii Town</li>
         <li><span>Province</span><br>Nyanza, Kenya</li>
         <li><span>Web</span><br>ochokiadvocates.co.ke</li>
-        <li><span>Hours</span><br>Mon–Fri 8am–5pm<br>Sat 9am–1pm</li>
+        <li><span>Hours</span><br>Mon–Sat 8am–5pm</li>
       </ul></div>
     </div>
     <div class="footer-bottom">
@@ -1462,7 +1468,7 @@ nav.scrolled { height:60px; background:rgba(13,13,11,0.98); }
         <li onclick="showPage('contact')">Contact</li>
       </ul></div>
       <div class="footer-col"><h5>Contact</h5><ul>
-        <li>P.O. Box 2464, Kisii</li><li>Nyanza Province, Kenya</li><li>ochokiadvocates.co.ke</li>
+        <li>Royal Towers, 3rd Floor, Kisii Town</li><li>Nyanza Province, Kenya</li><li>ochokiadvocates.co.ke</li>
       </ul></div>
       <div class="footer-col"></div>
     </div>
@@ -1591,7 +1597,7 @@ nav.scrolled { height:60px; background:rgba(13,13,11,0.98); }
         <li onclick="showPage('practice')">Practice Areas</li><li onclick="showPage('attorneys')">Our Team</li>
         <li onclick="showPage('contact')">Contact</li>
       </ul></div>
-      <div class="footer-col"><h5>Contact</h5><ul><li>P.O. Box 2464, Kisii</li><li>Nyanza Province, Kenya</li></ul></div>
+      <div class="footer-col"><h5>Contact</h5><ul><li>Royal Towers, 3rd Floor, Kisii Town</li><li>Nyanza Province, Kenya</li></ul></div>
       <div class="footer-col"></div>
     </div>
     <div class="footer-bottom">
@@ -1632,11 +1638,11 @@ nav.scrolled { height:60px; background:rgba(13,13,11,0.98); }
         </div>
       </div>
       <div class="atty-card reveal d2">
-        <div class="atty-photo"><div class="atty-initials">SA</div><div class="atty-bar"></div></div>
+        <div class="atty-photo"><div class="atty-initials">AA</div><div class="atty-bar"></div></div>
         <div class="atty-body">
-          <h3 class="atty-name">Ms. Sarah Aboge</h3>
+          <h3 class="atty-name">Associate Advocate</h3>
           <div class="atty-role">Senior Associate — Family &amp; Estate Law</div>
-          <p class="atty-bio">Ms. Aboge brings a compassionate yet rigorous approach to family law and estate planning. She has guided hundreds of families through succession, probate, and sensitive matrimonial proceedings with expertise, discretion, and genuine care for every client she serves.</p>
+          <p class="atty-bio">Our family law and estate planning advocate brings a compassionate yet rigorous approach to every matter. She has guided hundreds of families through succession, probate, and sensitive matrimonial proceedings with expertise and genuine care.</p>
           <div class="atty-tags">
             <span class="atty-tag">Family Law</span>
             <span class="atty-tag">Estate Planning</span>
@@ -1645,11 +1651,11 @@ nav.scrolled { height:60px; background:rgba(13,13,11,0.98); }
         </div>
       </div>
       <div class="atty-card reveal d4">
-        <div class="atty-photo"><div class="atty-initials">BM</div><div class="atty-bar"></div></div>
+        <div class="atty-photo"><div class="atty-initials">AA</div><div class="atty-bar"></div></div>
         <div class="atty-body">
-          <h3 class="atty-name">Mr. Brian Momanyi</h3>
+          <h3 class="atty-name">Associate Advocate</h3>
           <div class="atty-role">Associate — Criminal Defense &amp; Litigation</div>
-          <p class="atty-bio">A skilled trial advocate with a sharp eye for procedural detail. Mr. Momanyi handles criminal defense briefs from arrest through appeal and represents clients in complex civil litigation matters across the region with tenacity and precision.</p>
+          <p class="atty-bio">A skilled trial advocate with a sharp eye for procedural detail. Handles criminal defense briefs from arrest through appeal and represents clients in complex civil litigation matters across the region with tenacity and precision.</p>
           <div class="atty-tags">
             <span class="atty-tag">Criminal Defense</span>
             <span class="atty-tag">Civil Litigation</span>
@@ -1676,7 +1682,7 @@ nav.scrolled { height:60px; background:rgba(13,13,11,0.98); }
         <li onclick="showPage('practice')">Practice Areas</li><li onclick="showPage('attorneys')">Our Team</li>
         <li onclick="showPage('contact')">Contact</li>
       </ul></div>
-      <div class="footer-col"><h5>Contact</h5><ul><li>P.O. Box 2464, Kisii</li><li>Nyanza Province, Kenya</li></ul></div>
+      <div class="footer-col"><h5>Contact</h5><ul><li>Royal Towers, 3rd Floor, Kisii Town</li><li>Nyanza Province, Kenya</li></ul></div>
       <div class="footer-col"></div>
     </div>
     <div class="footer-bottom">
@@ -1713,7 +1719,7 @@ nav.scrolled { height:60px; background:rgba(13,13,11,0.98); }
         <div class="c-icon">📞</div>
         <div>
           <div class="c-label">Phone</div>
-          <div class="c-val"><a href="tel:+254700000000">+254 700 000 000</a></div>
+          <div class="c-val"><a href="tel:+254713711953">+254 713 711 953</a></div>
         </div>
       </div>
       <div class="c-item">
@@ -1734,7 +1740,7 @@ nav.scrolled { height:60px; background:rgba(13,13,11,0.98); }
         <div class="c-icon">🕐</div>
         <div>
           <div class="c-label">Office Hours</div>
-          <div class="c-val">Monday – Friday: 8:00am – 5:00pm<br>Saturday: 9:00am – 1:00pm<br>Sunday: Closed</div>
+          <div class="c-val">Monday – Saturday: 8:00am – 5:00pm<br>Sunday: Closed</div>
         </div>
       </div>
       <div class="consult-box">
@@ -1765,7 +1771,7 @@ nav.scrolled { height:60px; background:rgba(13,13,11,0.98); }
           </div>
           <div class="fgrp">
             <label class="flabel" for="phone">Phone Number</label>
-            <input class="finput" id="phone" name="phone" type="tel" placeholder="+254 700 000 000"/>
+            <input class="finput" id="phone" name="phone" type="tel" placeholder="+254 713 711 953"/>
           </div>
         </div>
         <div class="fgrp">
@@ -1822,7 +1828,7 @@ nav.scrolled { height:60px; background:rgba(13,13,11,0.98); }
         <li onclick="showPage('contact')">Contact</li>
       </ul></div>
       <div class="footer-col"><h5>Contact</h5><ul>
-        <li>P.O. Box 2464, Kisii</li><li>Nyanza Province, Kenya</li><li>ochokiadvocates.co.ke</li>
+        <li>Royal Towers, 3rd Floor, Kisii Town</li><li>Nyanza Province, Kenya</li><li>ochokiadvocates.co.ke</li>
       </ul></div>
       <div class="footer-col"></div>
     </div>
@@ -1862,7 +1868,11 @@ function showPage(id) {
     document.getElementById('navBurger').classList.remove('open');
   }
 }
-function nav(id) { showPage(id); toggleMobile(); }
+function nav(id) {
+  document.getElementById('mobileNav').classList.remove('open');
+  document.getElementById('navBurger').classList.remove('open');
+  setTimeout(function(){ showPage(id); }, 80);
+}
 
 /* ── Mobile nav ── */
 function toggleMobile() {
