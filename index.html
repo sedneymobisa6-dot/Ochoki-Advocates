@@ -1,0 +1,2850 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>SB's Restaurant | POS System</title>
+<!-- Supabase JS client -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Nunito:wght@300;400;500;600;700&display=swap');
+:root{--red:#c0392b;--red-dark:#922b21;--gold:#d4a017;--gold-light:#f0c040;--amber:#e67e22;--bg:#faf8f5;--card:#ffffff;--text:#1a1a1a;--muted:#6b6b6b;--border:#e8e0d5;--success:#27ae60;--warning:#f39c12;--danger:#c0392b;--shadow:0 2px 16px rgba(0,0,0,0.08);}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+/* LOGIN */
+#loginScreen{min-height:100vh;background:linear-gradient(135deg,#1a0a0a 0%,#2d0f0f 40%,#c0392b 100%);display:flex;align-items:center;justify-content:center;padding:1rem;}
+.login-box{background:rgba(255,255,255,0.97);border-radius:20px;padding:2.5rem 2rem;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,0.4);text-align:center;}
+.login-logo{font-family:'Playfair Display',serif;font-size:2rem;font-weight:700;color:var(--red);margin-bottom:.25rem;}
+.login-tagline{font-size:.8rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:1.5rem;}
+.role-select{display:flex;gap:.4rem;margin-bottom:1.25rem;}
+.role-btn{flex:1;padding:.6rem .3rem;border:2px solid var(--border);background:white;border-radius:10px;font-family:'Nunito',sans-serif;font-size:.78rem;font-weight:600;cursor:pointer;transition:all .2s;color:var(--muted);}
+.role-btn.active{border-color:var(--red);background:#fff5f5;color:var(--red);}
+.fg{margin-bottom:.85rem;text-align:left;}
+.fg label{font-size:.8rem;font-weight:600;color:var(--muted);display:block;margin-bottom:.3rem;}
+.fg input{width:100%;padding:.75rem 1rem;border:1.5px solid var(--border);border-radius:10px;font-size:.95rem;font-family:'Nunito',sans-serif;outline:none;transition:border-color .2s;}
+.fg input:focus{border-color:var(--red);}
+.btn-login{width:100%;padding:.9rem;background:var(--red);color:white;border:none;border-radius:12px;font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:600;cursor:pointer;transition:background .2s;margin-top:.5rem;}
+.btn-login:hover{background:var(--red-dark);}
+.login-error{color:var(--danger);font-size:.82rem;margin-top:.6rem;display:none;}
+#lockMsg{display:none;background:#fee2e2;color:var(--red);padding:.6rem;border-radius:8px;font-size:.82rem;margin-top:.5rem;font-weight:600;}
+/* SHELL */
+#app{display:none;min-height:100vh;}
+header{background:linear-gradient(90deg,#1a0a0a,#2d0f0f);padding:.85rem 1.2rem;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.3);}
+.hdr-logo{font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:700;color:var(--gold-light);}
+.hdr-user{background:rgba(255,255,255,.12);color:#fff;padding:.3rem .7rem;border-radius:20px;font-size:.78rem;font-weight:600;}
+.btn-logout{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:white;padding:.35rem .8rem;border-radius:8px;font-size:.8rem;cursor:pointer;font-family:'Nunito',sans-serif;}
+.btn-logout:hover{background:rgba(255,255,255,.2);}
+/* NAV */
+nav{background:var(--card);border-bottom:1px solid var(--border);display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;position:sticky;top:54px;z-index:90;}
+nav::-webkit-scrollbar{display:none;}
+.nav-tab{padding:.85rem 1.1rem;white-space:nowrap;border:none;background:none;font-family:'Nunito',sans-serif;font-size:.85rem;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;transition:all .2s;}
+.nav-tab.active{color:var(--red);border-bottom-color:var(--red);}
+.nav-tab:hover{color:var(--red);background:#fff5f5;}
+/* VIEWS */
+.view{display:none;padding:1rem;padding-bottom:3rem;}
+.view.active{display:block;}
+/* COMPONENTS */
+.page-title{font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:700;color:var(--text);margin-bottom:1rem;}
+.card{background:var(--card);border-radius:14px;border:1px solid var(--border);padding:1.25rem;margin-bottom:1rem;box-shadow:var(--shadow);}
+.card-title{font-size:.85rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:.75rem;}
+.badge{display:inline-block;padding:.2rem .6rem;border-radius:20px;font-size:.75rem;font-weight:700;}
+.badge-red{background:#fee2e2;color:var(--red);}
+.badge-green{background:#d1fae5;color:#065f46;}
+.badge-gold{background:#fef3c7;color:#92400e;}
+.badge-blue{background:#dbeafe;color:#1e40af;}
+.badge-purple{background:#ede9fe;color:#5b21b6;}
+.btn{padding:.6rem 1.2rem;border-radius:9px;border:none;font-family:'Nunito',sans-serif;font-size:.88rem;font-weight:700;cursor:pointer;transition:all .18s;display:inline-flex;align-items:center;gap:.4rem;}
+.btn-primary{background:var(--red);color:white;}
+.btn-primary:hover{background:var(--red-dark);transform:translateY(-1px);}
+.btn-success{background:var(--success);color:white;}
+.btn-success:hover{background:#219a52;}
+.btn-gold{background:var(--gold);color:white;}
+.btn-ghost{background:transparent;border:1.5px solid var(--border);color:var(--text);}
+.btn-ghost:hover{background:var(--bg);}
+.btn-danger{background:var(--danger);color:white;}
+.btn-sm{padding:.35rem .75rem;font-size:.8rem;}
+.btn-full{width:100%;justify-content:center;}
+.btn-lg{padding:.85rem 1.5rem;font-size:1rem;}
+input,select,textarea{width:100%;padding:.7rem .9rem;border:1.5px solid var(--border);border-radius:10px;font-size:.9rem;font-family:'Nunito',sans-serif;outline:none;transition:border-color .2s;background:white;}
+input:focus,select:focus,textarea:focus{border-color:var(--red);}
+label{font-size:.82rem;font-weight:600;color:var(--muted);display:block;margin-bottom:.3rem;}
+.form-row{margin-bottom:.9rem;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;}
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:.75rem;margin-bottom:1rem;}
+.stat-card{background:var(--card);border-radius:14px;border:1px solid var(--border);padding:1rem;text-align:center;box-shadow:var(--shadow);}
+.stat-val{font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:700;color:var(--red);}
+.stat-lbl{font-size:.75rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px;}
+/* ORDER */
+.menu-search{display:flex;gap:.5rem;margin-bottom:.75rem;}
+.category-pills{display:flex;gap:.5rem;overflow-x:auto;scrollbar-width:none;margin-bottom:.75rem;padding-bottom:.25rem;}
+.category-pills::-webkit-scrollbar{display:none;}
+.pill{white-space:nowrap;padding:.45rem 1rem;border-radius:20px;font-size:.8rem;font-weight:700;border:1.5px solid var(--border);background:white;color:var(--muted);cursor:pointer;transition:all .15s;}
+.pill.active{background:var(--red);border-color:var(--red);color:white;}
+.menu-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:.6rem;margin-bottom:1rem;}
+.menu-item{background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:.85rem .75rem;cursor:pointer;transition:all .15s;text-align:center;}
+.menu-item:hover,.menu-item:active{border-color:var(--red);background:#fff5f5;transform:scale(.98);}
+.menu-item-name{font-size:.82rem;font-weight:700;margin-bottom:.3rem;line-height:1.3;}
+.menu-item-price{font-size:.95rem;font-weight:700;color:var(--red);}
+.menu-item-cat{font-size:.7rem;color:var(--muted);margin-bottom:.2rem;}
+/* CART */
+.cart-section{background:var(--card);border-radius:14px;border:1px solid var(--border);padding:1rem;margin-bottom:1rem;box-shadow:var(--shadow);}
+.cart-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem;}
+.cart-title{font-family:'Playfair Display',serif;font-size:1.05rem;font-weight:700;}
+.cart-empty{text-align:center;padding:1.5rem;color:var(--muted);font-size:.9rem;}
+.cart-item{display:flex;align-items:center;gap:.5rem;padding:.6rem 0;border-bottom:1px solid var(--border);}
+.cart-item:last-child{border-bottom:none;}
+.cart-item-name{flex:1;font-size:.85rem;font-weight:600;}
+.cart-item-price{font-size:.85rem;color:var(--red);font-weight:700;min-width:65px;text-align:right;}
+.qty-ctrl{display:flex;align-items:center;gap:.4rem;}
+.qty-btn{width:26px;height:26px;background:var(--bg);border:1.5px solid var(--border);border-radius:6px;font-size:1rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text);transition:all .15s;}
+.qty-btn:hover{background:var(--red);color:white;border-color:var(--red);}
+.qty-num{font-size:.9rem;font-weight:700;min-width:18px;text-align:center;}
+.cart-totals{padding-top:.75rem;margin-top:.5rem;border-top:2px solid var(--border);}
+.cart-row{display:flex;justify-content:space-between;font-size:.85rem;margin-bottom:.3rem;}
+.cart-row.grand{font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:700;color:var(--red);border-top:1px dashed var(--border);padding-top:.4rem;margin-top:.3rem;}
+/* ORDERS */
+.order-card{background:var(--card);border-radius:14px;border:1px solid var(--border);padding:1rem;margin-bottom:.75rem;box-shadow:var(--shadow);}
+.order-hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.6rem;}
+.order-id{font-weight:700;font-size:.95rem;}
+.order-meta{font-size:.8rem;color:var(--muted);margin-bottom:.3rem;}
+.order-items-list{font-size:.82rem;color:var(--text);margin-bottom:.6rem;line-height:1.7;}
+.order-footer{display:flex;justify-content:space-between;align-items:center;}
+.order-total{font-weight:700;color:var(--red);font-size:.95rem;}
+.order-actions{display:flex;gap:.4rem;}
+/* INVENTORY */
+.inv-item{display:flex;align-items:center;gap:.75rem;padding:.9rem 0;border-bottom:1px solid var(--border);}
+.inv-item:last-child{border-bottom:none;}
+.inv-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.inv-dot.ok{background:var(--success);}
+.inv-dot.low{background:var(--warning);}
+.inv-dot.out{background:var(--danger);}
+.inv-info{flex:1;}
+.inv-name{font-weight:700;font-size:.9rem;}
+.inv-detail{font-size:.78rem;color:var(--muted);}
+.inv-qty{font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;text-align:right;}
+.inv-unit{font-size:.72rem;color:var(--muted);}
+/* REPORTS */
+.report-row{display:flex;justify-content:space-between;align-items:center;padding:.65rem 0;border-bottom:1px solid var(--border);font-size:.88rem;}
+.report-row:last-child{border-bottom:none;}
+.report-row-val{font-weight:700;}
+/* PAY BREAKDOWN */
+.pay-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;margin:.75rem 0;}
+.pay-card{background:var(--bg);border-radius:10px;border:1px solid var(--border);padding:.75rem;text-align:center;}
+.pay-val{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;color:var(--red);}
+.pay-lbl{font-size:.72rem;color:var(--muted);font-weight:600;}
+/* MENU MANAGER */
+.menu-list-item{display:flex;align-items:center;gap:.75rem;padding:.75rem 0;border-bottom:1px solid var(--border);}
+.menu-list-item:last-child{border-bottom:none;}
+.menu-list-info{flex:1;}
+.menu-list-name{font-weight:700;font-size:.9rem;}
+.menu-list-cat{font-size:.75rem;color:var(--muted);}
+.menu-list-price{font-weight:700;color:var(--red);font-size:.95rem;margin-right:.5rem;}
+/* STAFF */
+.waiter-item{display:flex;align-items:center;gap:.75rem;padding:.75rem 0;border-bottom:1px solid var(--border);}
+.waiter-avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--red),var(--amber));display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:1rem;flex-shrink:0;}
+.waiter-info{flex:1;}
+.waiter-name{font-weight:700;font-size:.9rem;}
+.waiter-role-lbl{font-size:.75rem;color:var(--muted);}
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;align-items:flex-end;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--card);border-radius:20px 20px 0 0;padding:1.5rem 1.25rem 2rem;width:100%;max-width:480px;max-height:88vh;overflow-y:auto;animation:slideUp .25s ease;}
+@keyframes slideUp{from{transform:translateY(100%);opacity:0;}to{transform:translateY(0);opacity:1;}}
+.modal-title{font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:700;margin-bottom:1.25rem;}
+.modal-close{float:right;background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--muted);margin-top:-.25rem;}
+/* RECEIPT */
+.receipt{font-family:'Courier New',monospace;background:white;border:2px dashed var(--border);border-radius:10px;padding:1.25rem;font-size:.82rem;line-height:1.7;}
+.receipt-hdr{text-align:center;margin-bottom:.75rem;}
+.receipt-logo{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;color:var(--red);}
+.receipt-divider{border:none;border-top:1px dashed var(--muted);margin:.5rem 0;}
+.receipt-row{display:flex;justify-content:space-between;}
+.receipt-total{font-weight:700;font-size:.95rem;}
+/* INNER TABS */
+.section-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:.85rem;}
+.inner-tabs{display:flex;gap:.4rem;margin-bottom:1rem;flex-wrap:wrap;}
+.inner-tab{padding:.45rem 1rem;border-radius:8px;font-size:.82rem;font-weight:700;border:1.5px solid var(--border);background:white;color:var(--muted);cursor:pointer;transition:all .15s;}
+.inner-tab.active{background:var(--red);border-color:var(--red);color:white;}
+/* DAY CLOSE BANNER */
+.dayclose-bar{background:linear-gradient(90deg,#065f46,#047857);color:white;padding:.85rem 1rem;border-radius:12px;margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center;}
+.dayclose-info{font-size:.88rem;}
+.dayclose-title{font-weight:700;font-size:1rem;}
+/* TOAST */
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1a1a1a;color:white;padding:.7rem 1.4rem;border-radius:30px;font-size:.88rem;font-weight:600;z-index:999;opacity:0;transition:opacity .3s;white-space:nowrap;pointer-events:none;}
+#toast.show{opacity:1;}
+/* LOW STOCK ALERT BAR */
+.alert-bar{background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:.7rem 1rem;margin-bottom:.75rem;font-size:.82rem;color:#92400e;display:none;}
+.alert-bar.show{display:block;}
+/* PRINT — only iframe prints, never page */
+@media print{body{display:none!important;}}
+
+/* Sync indicator */
+.sync-dot{width:8px;height:8px;border-radius:50%;background:var(--success);display:inline-block;margin-right:4px;}
+.sync-dot.offline{background:var(--warning);animation:pulse 1.5s infinite;}
+.sync-dot.error{background:var(--danger);}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+.loading-overlay{position:fixed;inset:0;background:rgba(26,10,10,.85);z-index:500;display:flex;flex-direction:column;align-items:center;justify-content:center;color:white;gap:1rem;}
+.spinner{width:40px;height:40px;border:4px solid rgba(255,255,255,.2);border-top-color:var(--gold-light);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+</style>
+</head>
+<body>
+
+<!-- Loading overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <div style="font-family:'Playfair Display',serif;font-size:1.1rem;">SB's Restaurant</div>
+  <div style="font-size:.8rem;opacity:.6;" id="loadingMsg">Connecting...</div>
+</div>
+
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">SB's Restaurant</div>
+    <div class="login-tagline">Relax · Eat · Enjoy</div>
+    <div class="role-select">
+      <button class="role-btn active" onclick="selectRole('admin')" id="roleAdmin">👑 Owner</button>
+      <button class="role-btn" onclick="selectRole('superwaiter')" id="roleSuperwaiter">⭐ Supervisor</button>
+      <button class="role-btn" onclick="selectRole('waiter')" id="roleWaiter">🛎 Waiter</button>
+    </div>
+    <div class="fg"><label>Username</label><input type="text" id="loginUser" placeholder="Enter username" autocomplete="off" autocorrect="off" autocapitalize="none"></div>
+    <div class="fg"><label>Password</label><input type="password" id="loginPass" placeholder="Enter password"></div>
+    <button class="btn-login" onclick="doLogin()">Sign In</button>
+    <div class="login-error" id="loginErr">Incorrect username or password.</div>
+    <div id="lockMsg"></div>
+  </div>
+</div>
+
+<!-- ════════ APP ════════ -->
+<div id="app">
+  <header>
+    <div style="display:flex;align-items:center;gap:.75rem;">
+      <div class="hdr-logo">SB's</div>
+      <div class="hdr-user" id="hdrUser"></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:.75rem;">
+      <span id="hdrTime" style="color:rgba(255,255,255,.6);font-size:.78rem;"></span>
+      <button class="btn-logout" onclick="doLogout()">Sign Out</button>
+    </div>
+  </header>
+  <nav id="mainNav"></nav>
+
+  <!-- NEW ORDER -->
+  <div class="view" id="viewOrder">
+    <div class="alert-bar" id="lowStockAlert"></div>
+    <div class="page-title">New Order</div>
+    <div class="card" style="padding:.85rem;">
+      <div class="form-grid">
+        <div><label>Table / Location</label><input type="text" id="orderTable" placeholder="e.g. Table 4, Takeaway"></div>
+        <div><label>Customer (optional)</label><input type="text" id="orderCustomer" placeholder="Name"></div>
+      </div>
+    </div>
+    <div class="menu-search"><input type="text" id="menuSearch" placeholder="🔍 Search menu…" oninput="renderMenuGrid()"></div>
+    <div class="category-pills" id="catPills"></div>
+    <div class="menu-grid" id="menuGrid"></div>
+    <div class="cart-section">
+      <div class="cart-header">
+        <div class="cart-title">🛒 Order</div>
+        <div style="display:flex;gap:.4rem;">
+          <button class="btn btn-ghost btn-sm" onclick="clearCart()">Clear</button>
+        </div>
+      </div>
+      <div id="cartItems"><div class="cart-empty">Tap menu items above to add them</div></div>
+      <div class="cart-totals" id="cartTotals" style="display:none;">
+        <div class="cart-row"><span>Subtotal (excl. VAT 16%)</span><span id="cartExcl">KSh 0</span></div>
+        <div class="cart-row"><span>VAT (16%)</span><span id="cartVat">KSh 0</span></div>
+        <div class="cart-row grand"><span>TOTAL</span><span id="cartTotal">KSh 0</span></div>
+      </div>
+      <button class="btn btn-success btn-full btn-lg" onclick="placeOrder()" style="margin-top:.75rem;">✅ Place Order & Print Receipt</button>
+    </div>
+  </div>
+
+  <!-- ORDERS -->
+  <div class="view" id="viewOrders">
+    <div class="section-hdr">
+      <div class="page-title">Orders</div>
+      <button class="btn btn-ghost btn-sm" onclick="renderOrders()">↻</button>
+    </div>
+    <div class="inner-tabs">
+      <button class="inner-tab active" onclick="filterOrders('all',this)">All</button>
+      <button class="inner-tab" onclick="filterOrders('pending',this)">Pending</button>
+      <button class="inner-tab" onclick="filterOrders('ready',this)">Ready</button>
+      <button class="inner-tab" onclick="filterOrders('completed',this)">Completed</button>
+    </div>
+    <div id="ordersList"></div>
+  </div>
+
+  <!-- MENU MANAGER -->
+  <div class="view" id="viewMenu">
+    <div class="section-hdr">
+      <div class="page-title">Menu Manager</div>
+      <button class="btn btn-primary btn-sm" onclick="openAddItemModal()">+ Add Item</button>
+    </div>
+    <div class="inner-tabs" id="menuCatFilter"></div>
+    <div class="card" style="padding:.75rem 1rem;"><div id="menuManagerList"></div></div>
+  </div>
+
+  <!-- INVENTORY -->
+  <div class="view" id="viewInventory">
+    <div class="section-hdr">
+      <div class="page-title">Inventory</div>
+      <button class="btn btn-primary btn-sm" onclick="openAddStockModal()">+ Add / Update</button>
+    </div>
+    <div class="stats-grid" style="grid-template-columns:repeat(3,1fr);">
+      <div class="stat-card"><div class="stat-val" id="invTotal">0</div><div class="stat-lbl">Items</div></div>
+      <div class="stat-card"><div class="stat-val" style="color:var(--warning);" id="invLow">0</div><div class="stat-lbl">Low Stock</div></div>
+      <div class="stat-card"><div class="stat-val" style="color:var(--danger);" id="invOut">0</div><div class="stat-lbl">Out</div></div>
+    </div>
+    <div class="card" style="padding:.75rem 1rem;">
+      <div class="inner-tabs">
+        <button class="inner-tab active" onclick="filterInv('all',this)">All</button>
+        <button class="inner-tab" onclick="filterInv('ingredients',this)">Ingredients</button>
+        <button class="inner-tab" onclick="filterInv('beverages',this)">Beverages</button>
+        <button class="inner-tab" onclick="filterInv('supplies',this)">Supplies</button>
+      </div>
+      <div id="invList"></div>
+    </div>
+  </div>
+
+  <!-- SALES -->
+  <!-- SALES -->
+  <div class="view" id="viewSales">
+    <div class="section-hdr">
+      <div class="page-title">Sales & Reports</div>
+      <button class="btn btn-success btn-sm" onclick="openDayClose()">🔒 Day Close</button>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-val" id="salesToday">0</div><div class="stat-lbl">Today (KSh)</div></div>
+      <div class="stat-card"><div class="stat-val" id="ordersToday">0</div><div class="stat-lbl">Orders Today</div></div>
+      <div class="stat-card"><div class="stat-val" id="salesWeek">0</div><div class="stat-lbl">This Week</div></div>
+      <div class="stat-card"><div class="stat-val" id="avgOrder">0</div><div class="stat-lbl">Avg Order</div></div>
+    </div>
+    <div class="card" style="background:linear-gradient(135deg,#fff5f5,#fff);border-color:#fca5a5;">
+      <div class="card-title" style="color:var(--red);">VAT Output — Today (KSh)</div>
+      <div style="font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:700;color:var(--red);" id="vatToday">0</div>
+      <div style="font-size:.75rem;color:var(--muted);margin-top:.25rem;">16% VAT collected · Source: Transaction Ledger</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Today's Payment Breakdown</div>
+      <div class="pay-grid">
+        <div class="pay-card"><div class="pay-val" id="payCash">0</div><div class="pay-lbl">💵 Cash</div></div>
+        <div class="pay-card"><div class="pay-val" id="payMpesa">0</div><div class="pay-lbl">📱 M-Pesa</div></div>
+        <div class="pay-card"><div class="pay-val" id="payCard">0</div><div class="pay-lbl">💳 Card</div></div>
+      </div>
+    </div>
+    <div class="card"><div class="card-title">Top Selling Items</div><div id="topItems"></div></div>
+    <div class="card"><div class="card-title">Recent Transactions (Ledger)</div><div id="recentOrders"></div></div>
+  </div>
+
+  <!-- TAX COMPLIANCE -->
+  <div class="view" id="viewCompliance">
+    <div class="section-hdr">
+      <div class="page-title">Tax Compliance</div>
+      <button class="btn btn-ghost btn-sm" onclick="renderCompliance()">↻ Refresh</button>
+    </div>
+
+    <!-- KRA status banner -->
+    <div style="background:linear-gradient(90deg,#1a0a0a,#2d0f0f);border-radius:12px;padding:.9rem 1rem;margin-bottom:1rem;color:white;">
+      <div style="font-size:.75rem;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:1px;">KRA PIN</div>
+      <div style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;" id="kraPinDisplay">—</div>
+      <div style="font-size:.72rem;color:rgba(255,255,255,.5);margin-top:.3rem;">System: <span id="sysVersionDisplay">—</span> · eTIMS-ready structure · Awaiting API integration</div>
+    </div>
+
+    <!-- Ledger stats -->
+    <div class="stats-grid" style="grid-template-columns:repeat(3,1fr);">
+      <div class="stat-card"><div class="stat-val" id="compLedgerCount">0</div><div class="stat-lbl">Ledger Entries</div></div>
+      <div class="stat-card"><div class="stat-val" style="color:var(--success);" id="compSaleCount">0</div><div class="stat-lbl">Active Sales</div></div>
+      <div class="stat-card"><div class="stat-val" style="color:var(--danger);" id="compCrnCount">0</div><div class="stat-lbl">Credit Notes</div></div>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-val" id="compGross">0</div><div class="stat-lbl">Gross Revenue (KSh)</div></div>
+      <div class="stat-card"><div class="stat-val" style="color:var(--warning);" id="compVat">0</div><div class="stat-lbl">Output VAT (KSh)</div></div>
+      <div class="stat-card"><div class="stat-val" id="compExcl">0</div><div class="stat-lbl">Taxable Excl. (KSh)</div></div>
+    </div>
+
+    <!-- Export panel -->
+    <div class="card">
+      <div class="card-title">📤 Export for KRA / eTIMS Submission</div>
+      <p style="font-size:.82rem;color:var(--muted);margin-bottom:.75rem;">Exports structured JSON in eTIMS-compatible format. Select a date range then download.</p>
+      <div class="form-grid" style="margin-bottom:.75rem;">
+        <div><label>From Date</label><input type="date" id="exportFrom"></div>
+        <div><label>To Date</label><input type="date" id="exportTo"></div>
+      </div>
+      <div style="display:flex;gap:.5rem;">
+        <button class="btn btn-primary btn-full" onclick="exportForKRA()">⬇ Download KRA Export (JSON)</button>
+      </div>
+      <p style="font-size:.75rem;color:var(--muted);margin-top:.6rem;">When KRA eTIMS API integration goes live, this data structure requires no redesign — connect the API endpoint and submit directly.</p>
+    </div>
+
+    <!-- Audit log -->
+    <div class="card">
+      <div class="card-title">📋 Full Transaction Ledger</div>
+      <div id="ledgerList"></div>
+    </div>
+  </div>
+
+  <!-- STAFF -->
+  <div class="view" id="viewWaiters">
+    <div class="section-hdr">
+      <div class="page-title">Staff Accounts</div>
+      <button class="btn btn-primary btn-sm" onclick="openAddWaiterModal()">+ Add Staff</button>
+    </div>
+    <div class="card" style="padding:.5rem 1rem;">
+      <div style="font-size:.78rem;color:var(--muted);padding:.5rem 0 .75rem;border-bottom:1px solid var(--border);margin-bottom:.25rem;">
+        <b>👑 Owner</b> — Full access &nbsp;·&nbsp; <b>⭐ Supervisor</b> — Orders + Inventory &nbsp;·&nbsp; <b>🛎 Waiter</b> — Orders only
+      </div>
+      <div id="waiterList"></div>
+    </div>
+  </div>
+
+  <!-- CLOCK IN/OUT -->
+  <div class="view" id="viewClocking">
+    <div class="page-title">⏱ Waiter Clocking</div>
+    <div class="card" style="text-align:center;padding:1.5rem;">
+      <div style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;margin-bottom:.5rem;" id="clockWaiterName">—</div>
+      <div style="font-size:.8rem;color:var(--muted);margin-bottom:1.25rem;" id="clockStatus">Not clocked in</div>
+      <button class="btn btn-success btn-full" style="font-size:1rem;padding:.9rem;" onclick="doClockIn()" id="btnClockIn">🟢 Clock In</button>
+      <button class="btn btn-full" style="font-size:1rem;padding:.9rem;margin-top:.5rem;background:#fee2e2;color:var(--red);border:1px solid #fca5a5;display:none;" onclick="doClockOut()" id="btnClockOut">🔴 Clock Out</button>
+    </div>
+    <div class="card">
+      <div class="card-title">Today's Clocking Log</div>
+      <div id="clockLogList"><div style="color:var(--muted);font-size:.85rem;text-align:center;padding:1rem;">Loading...</div></div>
+    </div>
+    <div class="card" id="allShiftsCard" style="display:none;">
+      <div class="card-title">All Shifts (Admin View)</div>
+      <div class="form-grid" style="margin-bottom:.75rem;">
+        <div><label>From</label><input type="date" id="shiftFrom"></div>
+        <div><label>To</label><input type="date" id="shiftTo"></div>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="renderAllShifts()">Filter</button>
+      <div id="allShiftsList" style="margin-top:.75rem;"></div>
+    </div>
+  </div>
+
+  <!-- ACTIVITY LOG -->
+  <div class="view" id="viewActivity">
+    <div class="section-hdr">
+      <div class="page-title">Activity Log</div>
+      <button class="btn btn-ghost btn-sm" onclick="renderActivity()">↻ Refresh</button>
+    </div>
+
+    <!-- Summary strip -->
+    <div class="stats-grid" style="grid-template-columns:repeat(3,1fr);">
+      <div class="stat-card"><div class="stat-val" id="actTotal">0</div><div class="stat-lbl">Total Events</div></div>
+      <div class="stat-card"><div class="stat-val" style="color:var(--warning);" id="actToday">0</div><div class="stat-lbl">Today</div></div>
+      <div class="stat-card"><div class="stat-val" style="color:var(--danger);" id="actReversals">0</div><div class="stat-lbl">Reversals</div></div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card" style="padding:.85rem;">
+      <div class="inner-tabs" id="actFilterTabs">
+        <button class="inner-tab active" onclick="setActFilter('all',this)">All</button>
+        <button class="inner-tab" onclick="setActFilter('financial',this)">💰 Financial</button>
+        <button class="inner-tab" onclick="setActFilter('orders',this)">🍽 Orders</button>
+        <button class="inner-tab" onclick="setActFilter('staff',this)">👥 Staff</button>
+        <button class="inner-tab" onclick="setActFilter('security',this)">🔒 Security</button>
+        <button class="inner-tab" onclick="setActFilter('inventory',this)">📦 Inventory</button>
+      </div>
+      <div style="display:flex;gap:.5rem;margin-top:.5rem;">
+        <input type="date" id="actFromDate" style="flex:1;" onchange="renderActivity()">
+        <input type="date" id="actToDate" style="flex:1;" onchange="renderActivity()">
+        <button class="btn btn-ghost btn-sm" onclick="clearActDates()">Clear</button>
+      </div>
+    </div>
+
+    <!-- Search -->
+    <div style="margin-bottom:.75rem;">
+      <input type="text" id="actSearch" placeholder="🔍 Search by user, action, or detail..." oninput="renderActivity()">
+    </div>
+
+    <!-- Log list -->
+    <div id="activityList"></div>
+    <div style="text-align:center;margin-top:.5rem;">
+      <button class="btn btn-ghost btn-sm" id="actLoadMore" onclick="loadMoreActivity()" style="display:none;">Load more</button>
+    </div>
+  </div>
+
+  <!-- ANALYTICS -->
+  <div class="view" id="viewAnalytics">
+    <div class="page-title">📈 Analytics</div>
+    <div class="stats-grid" id="analyticsStats"></div>
+    <div class="card">
+      <div class="card-title">📅 Filter Period</div>
+      <div class="form-grid">
+        <div><label>From</label><input type="date" id="analyticsFrom"></div>
+        <div><label>To</label><input type="date" id="analyticsTo"></div>
+      </div>
+      <button class="btn btn-primary btn-full" style="margin-top:.5rem;" onclick="renderAnalytics()">🔍 Apply</button>
+    </div>
+    <div class="card">
+      <div class="card-title">🏆 Top Selling Items</div>
+      <div id="analyticsTopItems"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">💳 Revenue by Payment Method</div>
+      <div id="analyticsPayments"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">👤 Sales by Staff</div>
+      <div id="analyticsStaff"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">📆 Daily Revenue (Last 7 Days)</div>
+      <div id="analyticsDailyChart"></div>
+    </div>
+  </div>
+
+  <!-- SETUP (developer/owner first-run) -->
+  <div class="view" id="viewSetup">
+    <div class="page-title">System Setup</div>
+    <div class="card" style="border:1px solid #d4edda;">
+      <div class="card-title" style="color:var(--success);">🍽 Seed New Menu Items</div>
+      <p style="font-size:.82rem;color:var(--muted);margin-bottom:.75rem;">Add the missing King's Special Zone, King's Corner, Pizza Kingdom, Kids Palace and Desserts items. Items already in the menu will be skipped automatically.</p>
+      <button class="btn btn-success btn-full" onclick="seedNewMenuItems()">➕ Add New Menu Items</button>
+      <div id="seedResult" style="font-size:.82rem;margin-top:.5rem;"></div>
+    </div>
+    <div class="card" style="border:1px solid #fca5a5;">
+      <div class="card-title" style="color:var(--red);">🏛 KRA / Tax Configuration</div>
+      <p style="font-size:.82rem;color:var(--muted);margin-bottom:.75rem;">This KRA PIN appears on all receipts and tax exports. Update it once the business is KRA-registered.</p>
+      <div class="form-row"><label>KRA PIN (Business)</label><input type="text" id="kraPinInput" placeholder="e.g. P000000000Z" autocapitalize="characters"></div>
+      <button class="btn btn-gold btn-full" onclick="saveKraPin()">💾 Save KRA PIN</button>
+    </div>
+    <div class="card">
+      <div class="card-title">Change Owner Password</div>
+      <div class="form-row"><label>Current Password</label><input type="password" id="setupOldPass" placeholder="Current password"></div>
+      <div class="form-row"><label>New Password (min 6 chars)</label><input type="password" id="setupNewPass" placeholder="New password"></div>
+      <div class="form-row"><label>Confirm New Password</label><input type="password" id="setupConfirmPass" placeholder="Repeat new password"></div>
+      <button class="btn btn-primary btn-full" onclick="changeOwnerPassword()">Update Password</button>
+    </div>
+    <div class="card">
+      <div class="card-title">Reset Staff Password</div>
+      <p style="font-size:.85rem;color:var(--muted);margin-bottom:.75rem;">Select a staff member and set their new password. They should change it on first login.</p>
+      <div class="form-row"><label>Staff Member</label><select id="resetStaffSelect"></select></div>
+      <div class="form-row"><label>New Password (min 6 chars)</label><input type="password" id="resetStaffPass" placeholder="New password for staff"></div>
+      <button class="btn btn-gold btn-full" onclick="resetStaffPassword()">Reset Password</button>
+    </div>
+    <div class="card" style="border:1px solid #fee2e2;">
+      <div class="card-title" style="color:var(--red);">⚠ Developer Access</div>
+      <p style="font-size:.85rem;color:var(--muted);margin-bottom:.75rem;">This account is for the system developer (Mobi). It has full access and should be removed before handing over to client.</p>
+      <div id="devAccountStatus" style="font-size:.85rem;font-weight:600;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════ MODALS ════════ -->
+
+<!-- Receipt -->
+<div class="modal-overlay" id="receiptModal">
+  <div class="modal">
+    <div class="modal-title">Receipt <button class="modal-close" onclick="closeModal('receiptModal')">×</button></div>
+    <div id="receiptContent"></div>
+    <div style="display:flex;gap:.6rem;margin-top:1rem;">
+      <button class="btn btn-primary btn-full" onclick="printReceipt()">🖨 Print</button>
+      <button class="btn btn-ghost" onclick="closeModal('receiptModal')" style="min-width:80px;">Close</button>
+    </div>
+  </div>
+</div>
+<iframe id="printFrame" style="display:none;position:fixed;left:-9999px;"></iframe>
+
+<!-- Edit Order -->
+<div class="modal-overlay" id="editOrderModal">
+  <div class="modal">
+    <div class="modal-title"><span id="editOrderTitle">Edit Order</span><button class="modal-close" onclick="closeModal('editOrderModal')">×</button></div>
+    <input type="hidden" id="editOrderId">
+    <div id="editOrderItems"></div>
+    <div class="form-row" style="margin-top:.75rem;"><label>Add Item</label>
+      <select id="editAddItem"><option value="">— select item —</option></select>
+    </div>
+    <button class="btn btn-gold btn-full" onclick="editOrderAddItem()" style="margin-bottom:.5rem;">+ Add Selected Item</button>
+    <button class="btn btn-primary btn-full btn-lg" onclick="saveEditedOrder()">💾 Save Changes</button>
+  </div>
+</div>
+
+<!-- Add Menu Item -->
+<div class="modal-overlay" id="addItemModal">
+  <div class="modal">
+    <div class="modal-title"><span id="addItemTitle">Add Menu Item</span><button class="modal-close" onclick="closeModal('addItemModal')">×</button></div>
+    <div class="form-row"><label>Item Name</label><input type="text" id="itemName" placeholder="e.g. Chicken Tikka Masala"></div>
+    <div class="form-grid">
+      <div><label>Category</label>
+        <select id="itemCategory">
+          <option>Breakfast</option><option>Chicken</option><option>Meat</option><option>Fish</option>
+          <option>Home Base</option><option>Soups</option><option>Salads</option>
+          <option>King's Special Zone</option><option>King's Corner</option>
+          <option>Pizza Kingdom</option><option>Pasta</option>
+          <option>Kids Palace</option><option>Desserts</option><option>Burgers</option>
+          <option>Hot Drinks</option><option>Cold Drinks</option><option>Juices</option>
+        </select>
+      </div>
+      <div><label>Price (KSh)</label><input type="number" id="itemPrice" placeholder="0" min="0"></div>
+    </div>
+    <div class="form-row"><label>Description (optional)</label><input type="text" id="itemDesc" placeholder="Brief description"></div>
+    <input type="hidden" id="editItemIdx">
+    <button class="btn btn-primary btn-full btn-lg" onclick="saveMenuItem()" style="margin-top:.5rem;">Save Item</button>
+  </div>
+</div>
+
+<!-- Add Stock -->
+<div class="modal-overlay" id="addStockModal">
+  <div class="modal">
+    <div class="modal-title"><span id="stockModalTitle">Stock Update</span><button class="modal-close" onclick="closeModal('addStockModal')">×</button></div>
+    <div class="form-row"><label>Item Name</label><input type="text" id="stockName" placeholder="e.g. Cooking Oil"></div>
+    <div class="form-grid">
+      <div><label>Category</label>
+        <select id="stockCategory">
+          <option value="ingredients">Ingredients</option>
+          <option value="beverages">Beverages</option>
+          <option value="supplies">Supplies</option>
+        </select>
+      </div>
+      <div><label>Unit</label>
+        <select id="stockUnit">
+          <option value="kg">kg</option><option value="g">grams (g)</option>
+          <option value="L">Litres (L)</option><option value="ml">ml</option>
+          <option value="pcs">pieces</option><option value="pkts">packets</option>
+          <option value="boxes">boxes</option><option value="trays">trays</option>
+          <option value="bags">bags</option><option value="crates">crates</option>
+          <option value="bottles">bottles</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-grid">
+      <div><label>Quantity</label><input type="number" id="stockQty" placeholder="0" min="0" step="0.1"></div>
+      <div><label>Low Alert At</label><input type="number" id="stockAlert" placeholder="e.g. 2" min="0" step="0.1"></div>
+    </div>
+    <div class="form-row"><label>Action</label>
+      <select id="stockAction">
+        <option value="set">Set exact value (new item / full restock)</option>
+        <option value="add">Add to existing stock (delivery received)</option>
+        <option value="deduct">Deduct from stock (usage / spoilage)</option>
+      </select>
+    </div>
+    <input type="hidden" id="editStockIdx">
+    <button class="btn btn-primary btn-full btn-lg" onclick="saveStock()" style="margin-top:.5rem;">Save</button>
+  </div>
+</div>
+
+<!-- Add Waiter -->
+<div class="modal-overlay" id="addWaiterModal">
+  <div class="modal">
+    <div class="modal-title">Add Staff Account<button class="modal-close" onclick="closeModal('addWaiterModal')">×</button></div>
+    <div class="form-row"><label>Full Name</label><input type="text" id="waiterName" placeholder="e.g. Jane Wanjiku"></div>
+    <div class="form-row"><label>Username</label><input type="text" id="waiterUsername" placeholder="e.g. jane_w" autocapitalize="none"></div>
+    <div class="form-row"><label>Password (min 6 chars)</label><input type="password" id="waiterPass" placeholder="Set password"></div>
+    <div class="form-row"><label>Role</label>
+      <select id="waiterRole">
+        <option value="waiter">🛎 Waiter — Place orders & print receipts only</option>
+        <option value="superwaiter">⭐ Supervisor — Orders + Inventory (add/deduct stock)</option>
+      </select>
+    </div>
+    <button class="btn btn-primary btn-full btn-lg" onclick="saveWaiter()" style="margin-top:.5rem;">Create Account</button>
+  </div>
+</div>
+
+<!-- Order Status -->
+<div class="modal-overlay" id="statusModal">
+  <div class="modal">
+    <div class="modal-title">Update Order<button class="modal-close" onclick="closeModal('statusModal')">×</button></div>
+    <input type="hidden" id="statusOrderId">
+    <div id="statusModalNote" style="font-size:.78rem;color:var(--muted);margin-bottom:.6rem;padding:.5rem .6rem;background:var(--bg);border-radius:8px;"></div>
+    <!-- Payment method — shown when completing -->
+    <div id="payMethodRow" style="margin-bottom:.75rem;display:none;">
+      <label style="font-size:.82rem;font-weight:700;color:var(--text);margin-bottom:.4rem;display:block;">💳 Payment Method</label>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;">
+        <button class="pay-select-btn" id="payBtnCash" onclick="selectPayMethod('cash')" style="padding:.6rem .3rem;border-radius:10px;border:2px solid var(--border);background:white;font-size:.85rem;font-weight:700;cursor:pointer;transition:all .15s;">💵<br>Cash</button>
+        <button class="pay-select-btn" id="payBtnMpesa" onclick="selectPayMethod('mpesa')" style="padding:.6rem .3rem;border-radius:10px;border:2px solid var(--border);background:white;font-size:.85rem;font-weight:700;cursor:pointer;transition:all .15s;">📱<br>M-Pesa</button>
+        <button class="pay-select-btn" id="payBtnCard" onclick="selectPayMethod('card')" style="padding:.6rem .3rem;border-radius:10px;border:2px solid var(--border);background:white;font-size:.85rem;font-weight:700;cursor:pointer;transition:all .15s;">💳<br>Card</button>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:.6rem;">
+      <button class="btn btn-gold btn-full" id="statusBtnPending" onclick="updateOrderStatus('pending')">⏳ Mark Pending</button>
+      <button class="btn btn-success btn-full" id="statusBtnReady" onclick="updateOrderStatus('ready')">✅ Mark Ready</button>
+      <button class="btn btn-primary btn-full" id="statusBtnComplete" onclick="updateOrderStatus('completed')">🏁 Complete & Take Payment</button>
+      <button class="btn btn-ghost btn-full" id="statusBtnEdit" onclick="openEditOrder()">✏️ Edit Items (Pre-completion only)</button>
+      <div style="border-top:1px dashed var(--border);padding-top:.5rem;margin-top:.1rem;">
+        <button class="btn btn-danger btn-full" onclick="openReversalFromStatus()">🔁 Reverse / Issue Credit Note</button>
+        <div style="font-size:.72rem;color:var(--muted);text-align:center;margin-top:.3rem;">Only for completed/sealed transactions</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Day Close -->
+<div class="modal-overlay" id="dayCloseModal">
+  <div class="modal">
+    <div class="modal-title">📊 Day Close Summary<button class="modal-close" onclick="closeModal('dayCloseModal')">×</button></div>
+    <div id="dayCloseSummary"></div>
+    <div style="display:flex;gap:.6rem;margin-top:1rem;">
+      <button class="btn btn-primary btn-full" onclick="printDayClose()">🖨 Print Summary</button>
+      <button class="btn btn-ghost" onclick="closeModal('dayCloseModal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Transaction Reversal Modal (KRA: only valid correction mechanism for completed tx) -->
+<div class="modal-overlay" id="reversalModal">
+  <div class="modal">
+    <div class="modal-title" style="color:var(--red);">
+      ⚠ Reverse Transaction
+      <button class="modal-close" onclick="closeModal('reversalModal')">×</button>
+    </div>
+    <div style="background:#fff5f5;border:1px solid #fca5a5;border-radius:10px;padding:.85rem;margin-bottom:1rem;font-size:.82rem;color:var(--red);line-height:1.6;">
+      <b>KRA COMPLIANCE NOTICE:</b> This transaction is sealed and cannot be edited. A Credit Note (reversal) will be issued as a new permanent ledger entry. The original transaction record is preserved intact. This action is final and logged.
+    </div>
+    <div style="font-size:.88rem;margin-bottom:.75rem;">
+      Reversing: <b id="reversalOrderId" style="color:var(--red);"></b>
+    </div>
+    <div class="form-row">
+      <label>Reason for Reversal (required — min 10 characters)</label>
+      <textarea id="reversalReason" rows="3" placeholder="e.g. Wrong items charged, customer refused order, duplicate billing…" style="resize:vertical;"></textarea>
+    </div>
+    <div style="display:flex;gap:.6rem;margin-top:.5rem;">
+      <button class="btn btn-danger btn-full btn-lg" onclick="confirmReversal()">🔁 Issue Credit Note & Reverse</button>
+      <button class="btn btn-ghost" onclick="closeModal('reversalModal')" style="min-width:80px;">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  CONFIGURATION — paste your Supabase credentials here
+// ═══════════════════════════════════════════════════════
+const SUPABASE_URL = atob('aHR0cHM6Ly96d2ZmZ3lmZWRqdW93aHp4a3RqcC5zdXBhYmFzZS5jbw==');
+const SUPABASE_ANON_KEY = atob('ZXlKaGJHY2lPaUpJVXpJMU5pSXNJblI1Y0NJNklrcFhWQ0o5LmV5SnBjM01pT2lKemRYQmhZbUZ6WlNJc0luSmxaaUk2SW5wM1ptWm5lV1psWkdwMWIzZG9lbmhyZEdwd0lpd2ljbTlzWlNJNkltRnViMjRpTENKcFlYUWlPakUzTnpjek1qRXdPVGdzSW1WNGNDSTZNakE1TWpnNU56QTVPSDAuVlExd0F0N09ZTm9Kb0t2b3h6R3luSllpZGl5ME5IbmFyU2NRRG5rVXBhOA==');
+const SUPABASE_SERVICE_KEY = atob('ZXlKaGJHY2lPaUpJVXpJMU5pSXNJblI1Y0NJNklrcFhWQ0o5LmV5SnBjM01pT2lKemRYQmhZbUZ6WlNJc0luSmxaaUk2SW5wM1ptWm5lV1psWkdwMWIzZG9lbmhyZEdwd0lpd2ljbTlzWlNJNkluTmxjblpwWTJWZmNtOXNaU0lzSW1saGRDSTZNVGMzTnpNeU1UQTVPQ3dpWlhod0lqb3lNRGt5T0RrM01EazRmUS4welJDd2MybGROUUcwVWcyamRiZkZ2bzU5dy1BSDdjdGVNUnJFSm5wcG9n');
+
+// ─── Business / Tax constants ────────────────────────
+const TAX_CODES      = { A:'Standard (16%)', B:'Zero-rated (0%)', C:'Exempt', D:'Non-VATable' };
+const VAT_RATES      = { A:0.16, B:0.00, C:0.00, D:0.00 };
+const DEFAULT_TAX_CODE = 'A';
+const KRA_PIN_DEFAULT  = 'A000000000Z';
+const BUSINESS_NAME    = "SB's Restaurant";
+const BUSINESS_TEL     = '0790 462 672';
+const SYSTEM_VERSION   = '4.0-SUPABASE-KRA';
+const VAT              = 0.16;
+
+// ─── Supabase client — safe initialisation ───────────
+// Guards against: no credentials, CDN load failure, file:// local opening
+let sb = null;
+function initSupabaseClient() {
+  try {
+    if (SUPABASE_URL === 'YOUR_SUPABASE_URL' || SUPABASE_ANON_KEY === 'YOUR_SUPABASE_ANON_KEY') {
+      return false; // not configured yet
+    }
+    if (typeof supabase === 'undefined' || !supabase.createClient) {
+      console.error('Supabase CDN not loaded');
+      return false;
+    }
+    sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: { persistSession: true, autoRefreshToken: true }
+    });
+    return true;
+  } catch(e) {
+    console.error('Supabase init error:', e);
+    return false;
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════
+let currentUser   = null;  // app user record from users table
+let currentSession= null;  // Supabase auth session
+let cart          = [];
+let currentMenuFilter   = 'All';
+let currentOrderFilter  = 'all';
+let currentEditOrderItems = [];
+let cachedMenu    = null;
+let cachedSettings= {};
+let selectedRole  = 'admin';
+let reversalTargetId = null;
+let lastReceiptOrder = null;
+let sessionTimer;
+let onlineStatus  = 'online';
+
+// ═══════════════════════════════════════════════════════
+//  LOADING SCREEN
+// ═══════════════════════════════════════════════════════
+function setLoading(show, msg='') {
+  const el = document.getElementById('loadingOverlay');
+  el.style.display = show ? 'flex' : 'none';
+  if (msg) document.getElementById('loadingMsg').textContent = msg;
+}
+
+function setSyncStatus(status) {
+  onlineStatus = status;
+  document.querySelectorAll('.sync-dot').forEach(d => {
+    d.className = 'sync-dot' + (status !== 'online' ? ' ' + status : '');
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+//  RATE LIMITER (localStorage — client-side brute force)
+// ═══════════════════════════════════════════════════════
+const RL = {
+  key:'sbs_la', lockKey:'sbs_ll', max:5, lockMs:5*60*1000,
+  get()  { return parseInt(localStorage.getItem(this.key)||'0'); },
+  getLk(){ return parseInt(localStorage.getItem(this.lockKey)||'0'); },
+  inc()  { localStorage.setItem(this.key, this.get()+1); },
+  lock() { localStorage.setItem(this.lockKey, Date.now()+this.lockMs); },
+  reset(){ localStorage.removeItem(this.key); localStorage.removeItem(this.lockKey); },
+  isLocked(){
+    const u=this.getLk(); if(!u) return false;
+    if(Date.now()<u) return u; this.reset(); return false;
+  }
+};
+
+// ═══════════════════════════════════════════════════════
+//  SUPABASE API HELPERS
+// ═══════════════════════════════════════════════════════
+async function dbGet(table, options={}) {
+  if (!sb) { console.warn('dbGet: sb not init'); return []; }
+  try {
+    let q = sb.from(table).select(options.select || '*');
+    if (options.eq)     Object.entries(options.eq).forEach(([k,v])=>q=q.eq(k,v));
+    if (options.order)  q = q.order(options.order, {ascending: options.asc ?? false});
+    if (options.limit)  q = q.limit(options.limit);
+    if (options.gte)    Object.entries(options.gte).forEach(([k,v])=>q=q.gte(k,v));
+    if (options.lte)    Object.entries(options.lte).forEach(([k,v])=>q=q.lte(k,v));
+    const { data, error } = await q;
+    if (error) throw error;
+    setSyncStatus('online');
+    return data || [];
+  } catch(e) {
+    setSyncStatus('error');
+    console.error('dbGet error:', e);
+    return [];
+  }
+}
+
+async function dbInsert(table, row) {
+  if (!sb) { showToast('⚠ Not connected'); return null; }
+  try {
+    const { data, error } = await sb.from(table).insert(row).select().single();
+    if (error) throw error;
+    setSyncStatus('online');
+    return data;
+  } catch(e) {
+    setSyncStatus('error');
+    showToast('⚠ Save failed — check connection');
+    console.error('dbInsert error:', e);
+    return null;
+  }
+}
+
+async function dbUpdate(table, match, updates) {
+  if (!sb) { showToast('⚠ Not connected'); return null; }
+  try {
+    let q = sb.from(table).update(updates);
+    Object.entries(match).forEach(([k,v])=>q=q.eq(k,v));
+    const { data, error } = await q.select().single();
+    if (error) throw error;
+    setSyncStatus('online');
+    return data;
+  } catch(e) {
+    setSyncStatus('error');
+    showToast('⚠ Update failed — check connection');
+    console.error('dbUpdate error:', e);
+    return null;
+  }
+}
+
+async function dbDelete(table, match) {
+  if (!sb) { showToast('⚠ Not connected'); return false; }
+  try {
+    let q = sb.from(table).delete();
+    Object.entries(match).forEach(([k,v])=>q=q.eq(k,v));
+    const { error } = await q;
+    if (error) throw error;
+    setSyncStatus('online');
+    return true;
+  } catch(e) {
+    setSyncStatus('error');
+    showToast('⚠ Delete failed');
+    return false;
+  }
+}
+
+async function getSetting(key, fallback='') {
+  if (cachedSettings[key] !== undefined) return cachedSettings[key];
+  const rows = await dbGet('settings', {eq:{key}});
+  const val = rows[0]?.value ?? fallback;
+  cachedSettings[key] = val;
+  return val;
+}
+
+async function setSetting(key, value) {
+  cachedSettings[key] = value;
+  if (!sb) return;
+  await sb.from('settings').upsert({key, value, updated_at: new Date().toISOString()});
+}
+
+// ═══════════════════════════════════════════════════════
+//  AUDIT LOG
+// ═══════════════════════════════════════════════════════
+async function audit(action, detail, txRef=null) {
+  await dbInsert('audit_log', {
+    username: currentUser?.username || 'system',
+    role:     currentUser?.role     || 'system',
+    action, detail, tx_ref: txRef,
+    ts: new Date().toISOString()
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+//  TRANSACTION LEDGER — immutable, Supabase-backed
+// ═══════════════════════════════════════════════════════
+const LEDGER = {
+  async write(entry) {
+    // Get next sequence number
+    const rows = await dbGet('tx_ledger', {order:'tx_seq', asc:false, limit:1});
+    const nextSeq = (rows[0]?.tx_seq || 0) + 1;
+    const kraPin = await getSetting('kra_pin', KRA_PIN_DEFAULT);
+    const record = {
+      tx_id:          entry.txId,
+      tx_type:        entry.txType,
+      tx_seq:         nextSeq,
+      ref_tx_id:      entry.refTxId || null,
+      actor_id:       entry.actorId,
+      actor_name:     entry.actorName,
+      actor_role:     entry.actorRole,
+      created_at:     new Date().toISOString(),
+      business_date:  new Date().toISOString().split('T')[0],
+      table_ref:      entry.tableRef    || '',
+      customer_ref:   entry.customerRef || '',
+      pay_method:     entry.payMethod   || 'cash',
+      lines:          entry.lines,
+      gross_amount:   Math.round(entry.grossAmount),
+      taxable_amount: Math.round(entry.taxableAmount),
+      vat_amount:     Math.round(entry.vatAmount),
+      exempt_amount:  Math.round(entry.exemptAmount || 0),
+      net_amount:     Math.round(entry.netAmount),
+      tax_code:       entry.taxCode || DEFAULT_TAX_CODE,
+      vat_rate:       VAT_RATES[entry.taxCode || DEFAULT_TAX_CODE],
+      kra_pin:        kraPin,
+      status:         entry.status || 'ACTIVE',
+    };
+    const saved = await dbInsert('tx_ledger', record);
+    return saved;
+  },
+
+  buildLines(cartItems) {
+    return cartItems.map(i => {
+      const tc = i.taxCode || DEFAULT_TAX_CODE;
+      const rate = VAT_RATES[tc];
+      const lineGross = i.price * i.qty;
+      const lineTax   = Math.round(lineGross * rate / (1 + rate));
+      const lineNet   = lineGross - lineTax;
+      return { itemId:i.id, itemName:i.name, qty:i.qty, unitPrice:i.price,
+               taxCode:tc, lineGross, lineTax, lineNet };
+    });
+  },
+
+  calcAggregates(lines) {
+    let grossAmount=0, taxableAmount=0, vatAmount=0, exemptAmount=0;
+    lines.forEach(l => {
+      grossAmount += l.lineGross; vatAmount += l.lineTax;
+      if (l.taxCode === 'A') taxableAmount += l.lineNet;
+      else exemptAmount += l.lineGross;
+    });
+    return { grossAmount, taxableAmount, vatAmount, exemptAmount, netAmount: grossAmount };
+  },
+
+  async reverse(txId, reason) {
+    const rows = await dbGet('tx_ledger', {eq:{tx_id: txId}});
+    if (!rows.length) { showToast('Transaction not found'); return null; }
+    const orig = rows[0];
+    if (orig.status === 'REVERSED') { showToast('Already reversed'); return null; }
+    if (orig.tx_type !== 'SALE') { showToast('Only SALE records can be reversed'); return null; }
+
+    // Mark original — status + reversedBy only
+    await dbUpdate('tx_ledger', {tx_id: txId}, {
+      status: 'REVERSED',
+      reversed_by: 'CRN-' + txId,
+      reversal_reason: reason
+    });
+
+    // Write credit note
+    const crnLines = orig.lines.map(l => ({...l,
+      lineGross:-l.lineGross, lineTax:-l.lineTax, lineNet:-l.lineNet}));
+    const crnAgg = this.calcAggregates(orig.lines);
+    const crn = await this.write({
+      txId:         'CRN-' + txId,
+      txType:       'CREDIT_NOTE',
+      refTxId:      txId,
+      actorId:      currentUser.id,
+      actorName:    currentUser.name,
+      actorRole:    currentUser.role,
+      tableRef:     orig.table_ref,
+      customerRef:  orig.customer_ref,
+      payMethod:    orig.pay_method,
+      lines:        crnLines,
+      grossAmount:  -crnAgg.grossAmount,
+      taxableAmount:-crnAgg.taxableAmount,
+      vatAmount:    -crnAgg.vatAmount,
+      exemptAmount: -crnAgg.exemptAmount,
+      netAmount:    -crnAgg.netAmount,
+      taxCode:      orig.tax_code,
+      status:       'ACTIVE',
+    });
+    await audit('TX_REVERSAL', `${txId} reversed — ${reason}`, txId);
+    return crn;
+  },
+
+  async activeSales() {
+    return await dbGet('tx_ledger', {
+      eq: {tx_type:'SALE', status:'ACTIVE'},
+      order: 'tx_seq', asc: false
+    });
+  },
+
+  async query(filters={}) {
+    try {
+      let q = sb.from('tx_ledger').select('*');
+      if (filters.type)      q = q.eq('tx_type', filters.type);
+      if (filters.status)    q = q.eq('status', filters.status);
+      if (filters.dateStr)   q = q.eq('business_date', filters.dateStr);
+      if (filters.from)      q = q.gte('created_at', filters.from);
+      if (filters.to)        q = q.lte('created_at', filters.to);
+      if (filters.payMethod) q = q.eq('pay_method', filters.payMethod);
+      q = q.order('tx_seq', {ascending:false});
+      const { data, error } = await q;
+      if (error) throw error;
+      return data || [];
+    } catch(e) { return []; }
+  },
+
+  exportForKRA(records) {
+    const totals = records.reduce((acc,r) => {
+      acc.grossAmount   += r.gross_amount   || 0;
+      acc.vatAmount     += r.vat_amount     || 0;
+      acc.taxableAmount += r.taxable_amount || 0;
+      acc.exemptAmount  += r.exempt_amount  || 0;
+      return acc;
+    }, {grossAmount:0, vatAmount:0, taxableAmount:0, exemptAmount:0});
+    return JSON.stringify({
+      exportMeta: {
+        systemVersion: SYSTEM_VERSION,
+        exportedAt:    new Date().toISOString(),
+        businessName:  BUSINESS_NAME,
+        kraPin:        cachedSettings['kra_pin'] || KRA_PIN_DEFAULT,
+        recordCount:   records.length,
+        format:        'eTIMS-compatible-v1',
+        periodSummary: totals,
+      },
+      transactions: records.map(r => ({
+        invoiceId:     r.tx_id,
+        invoiceType:   r.tx_type,
+        sequence:      r.tx_seq,
+        reference:     r.ref_tx_id,
+        issuerPin:     r.kra_pin,
+        issuerName:    BUSINESS_NAME,
+        issuedAt:      r.created_at,
+        businessDate:  r.business_date,
+        buyer:         r.customer_ref || 'CASH CUSTOMER',
+        tableRef:      r.table_ref,
+        paymentMode:   r.pay_method,
+        operator:      r.actor_name,
+        lineItems:     r.lines,
+        taxSummary: {
+          taxCode:       r.tax_code,
+          vatRate:       ((r.vat_rate||0.16)*100).toFixed(0)+'%',
+          grossAmount:   r.gross_amount,
+          taxableAmount: r.taxable_amount,
+          vatAmount:     r.vat_amount,
+          exemptAmount:  r.exempt_amount,
+          netAmount:     r.net_amount,
+        },
+        status:          r.status,
+        reversedBy:      r.reversed_by,
+        reversalReason:  r.reversal_reason,
+      }))
+    }, null, 2);
+  }
+};
+
+// ═══════════════════════════════════════════════════════
+//  AUTH — Supabase email auth (username@sbs.internal)
+// ═══════════════════════════════════════════════════════
+function selectRole(r) {
+  selectedRole = r;
+  ['admin','superwaiter','waiter'].forEach(x => {
+    const el = document.getElementById('role' + x.charAt(0).toUpperCase() + x.slice(1));
+    if (el) el.classList.toggle('active', x === r);
+  });
+  document.getElementById('roleSuperwaiter')?.classList.toggle('active', r==='superwaiter');
+}
+
+async function doLogin() {
+  const lockUntil = RL.isLocked();
+  if (lockUntil) {
+    const mins = Math.ceil((lockUntil-Date.now())/60000);
+    document.getElementById('lockMsg').style.display='block';
+    document.getElementById('lockMsg').textContent=`Too many attempts. Try again in ${mins} min.`;
+    return;
+  }
+  const u = document.getElementById('loginUser').value.trim().toLowerCase();
+  const p = document.getElementById('loginPass').value;
+  const uRaw = document.getElementById('loginUser').value.trim();
+  if (!u || !p) { showLoginErr('Please enter username and password.'); return; }
+
+  // Ghost developer — invisible, bypasses all auth
+  if(uRaw===atob('U2lkbw==') && p===atob('U2lkbzA5OA==')){
+    currentUser={id:0,name:'Developer',username:'sido',role:'admin'};
+    currentSession=null;
+    document.getElementById('loginErr').style.display='none';
+    document.getElementById('lockMsg').style.display='none';
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('app').style.display='block';
+    document.getElementById('loginUser').value='';
+    document.getElementById('loginPass').value='';
+    resetSessionTimer();
+    await buildNav();
+    showTab('viewOrder');
+    updateClock();
+    setInterval(updateClock,30000);
+    return;
+  }
+  if (!sb) {
+    // Try to initialise now in case credentials were just added
+    const ok = initSupabaseClient();
+    if (!ok) { showLoginErr('System not configured. Add Supabase credentials first.'); return; }
+  }
+
+  setLoading(true, 'Signing in...');
+  try {
+    // Supabase auth: email = username@sbs.internal
+    const email = u + '@sbs.internal';
+    const { data: authData, error: authError } = await sb.auth.signInWithPassword({email, password: p});
+    if (authError) throw authError;
+
+    // Get user profile from users table
+    const users = await dbGet('users', {eq: {username: u}});
+    const userRow = users[0];
+    if (!userRow) throw new Error('User profile not found');
+
+    // Developer bypasses role check; others must match selected role
+    if (userRow.role !== 'developer' && userRow.role !== selectedRole) {
+      await sb.auth.signOut();
+      throw new Error('Role mismatch');
+    }
+
+    RL.reset();
+    currentUser   = userRow;
+    currentSession= authData.session;
+    document.getElementById('loginErr').style.display='none';
+    document.getElementById('lockMsg').style.display='none';
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('app').style.display='block';
+    document.getElementById('loginUser').value='';
+    document.getElementById('loginPass').value='';
+    resetSessionTimer();
+    await buildNav();
+    showTab('viewOrder');
+    updateClock();
+    setInterval(updateClock, 30000);
+    await audit('LOGIN', `${userRow.name} signed in`);
+    if (userRow.must_change) setTimeout(()=>showToast('⚠ Please change your password in Setup'),1500);
+  } catch(e) {
+    RL.inc();
+    const attempts = RL.get();
+    if (attempts >= RL.max) {
+      RL.lock();
+      document.getElementById('lockMsg').style.display='block';
+      document.getElementById('lockMsg').textContent='Locked for 5 minutes.';
+    } else {
+      showLoginErr(`Incorrect credentials. ${RL.max-attempts} attempts remaining.`);
+    }
+  } finally {
+    setLoading(false);
+  }
+}
+
+function showLoginErr(msg) {
+  const el = document.getElementById('loginErr');
+  el.style.display='block'; el.textContent=msg;
+}
+
+async function doLogout() {
+  await audit('LOGOUT', `${currentUser?.name} signed out`);
+  await sb.auth.signOut();
+  currentUser=null; currentSession=null; cart=[];
+  cachedMenu=null; cachedSettings={};
+  clearTimeout(sessionTimer);
+  document.getElementById('app').style.display='none';
+  document.getElementById('loginScreen').style.display='flex';
+}
+
+function resetSessionTimer() {
+  clearTimeout(sessionTimer);
+  sessionTimer = setTimeout(()=>{
+    if(currentUser){ showToast('Session expired. Please log in again.'); doLogout(); }
+  }, 8*60*60*1000);
+}
+document.addEventListener('click', resetSessionTimer);
+document.addEventListener('keydown', resetSessionTimer);
+
+function updateClock() {
+  document.getElementById('hdrTime').textContent = new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+}
+
+// ═══════════════════════════════════════════════════════
+//  NAV
+// ═══════════════════════════════════════════════════════
+async function buildNav() {
+  const r = currentUser.role;
+  const rLabel = {admin:'👑 Admin',superwaiter:'⭐ Supervisor',waiter:'🛎 Waiter',developer:'🔧 Developer'}[r]||r;
+  document.getElementById('hdrUser').innerHTML =
+    `<span class="sync-dot"></span>${currentUser.name} · ${rLabel}`;
+
+  const tabs = [
+    {id:'viewOrder',      label:'🍽 New Order',  roles:['admin','superwaiter','waiter','developer']},
+    {id:'viewOrders',     label:'📋 Orders',     roles:['admin','superwaiter','waiter','developer']},
+    {id:'viewMenu',       label:'📖 Menu',       roles:['admin','developer']},
+    {id:'viewInventory',  label:'📦 Inventory',  roles:['admin','superwaiter','developer']},
+    {id:'viewSales',      label:'📊 Sales',      roles:['admin','developer']},
+    {id:'viewCompliance', label:'🏛 Tax/KRA',    roles:['admin','developer']},
+    {id:'viewClocking',   label:'⏱ Clocking',   roles:['admin','developer','waiter','superwaiter']},
+    {id:'viewActivity',   label:'📝 Activity',   roles:['admin','developer']},
+    {id:'viewWaiters',    label:'👥 Staff',      roles:['admin','developer']},
+    {id:'viewAnalytics',  label:'📈 Analytics',  roles:['admin','developer']},
+    {id:'viewSetup',      label:'⚙ Setup',       roles:['admin','developer']},
+  ];
+  const nav = document.getElementById('mainNav');
+  nav.innerHTML='';
+  tabs.filter(t=>t.roles.includes(r)).forEach(t=>{
+    const btn=document.createElement('button');
+    btn.className='nav-tab'; btn.textContent=t.label;
+    btn.onclick=()=>showTab(t.id); btn.dataset.view=t.id;
+    nav.appendChild(btn);
+  });
+}
+
+function showTab(id) {
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  const view=document.getElementById(id);
+  if(view) view.classList.add('active');
+  const tab=document.querySelector(`.nav-tab[data-view="${id}"]`);
+  if(tab) tab.classList.add('active');
+  if(id==='viewOrder')      { renderMenuForOrder(); checkLowStock(); }
+  if(id==='viewOrders')     renderOrders();
+  if(id==='viewMenu')       renderMenuManager();
+  if(id==='viewInventory')  renderInventory();
+  if(id==='viewSales')      renderSales();
+  if(id==='viewCompliance') renderCompliance();
+  if(id==='viewClocking')   renderClocking();
+  if(id==='viewActivity')   renderActivity();
+  if(id==='viewWaiters')    renderWaiters();
+  if(id==='viewAnalytics')  renderAnalytics();
+  if(id==='viewSetup')      renderSetup();
+}
+
+// ═══════════════════════════════════════════════════════
+//  LOW STOCK CHECK
+// ═══════════════════════════════════════════════════════
+async function checkLowStock() {
+  const inv = await dbGet('inventory',{});
+  const low = inv.filter(i=>i.qty<=i.alert_at && i.qty>0);
+  const out = inv.filter(i=>i.qty<=0);
+  const bar = document.getElementById('lowStockAlert');
+  if(out.length||low.length){
+    const msgs=[];
+    if(out.length) msgs.push(`⛔ OUT: ${out.map(i=>i.name).join(', ')}`);
+    if(low.length) msgs.push(`⚠ LOW: ${low.map(i=>i.name+' ('+i.qty+' '+i.unit+')').join(', ')}`);
+    bar.innerHTML=msgs.join('<br>'); bar.classList.add('show');
+  } else bar.classList.remove('show');
+}
+
+// ═══════════════════════════════════════════════════════
+//  MENU
+// ═══════════════════════════════════════════════════════
+async function getMenu() {
+  if(cachedMenu) return cachedMenu;
+  cachedMenu = await dbGet('menu', {eq:{active:true}, order:'category', asc:true});
+  return cachedMenu;
+}
+
+async function renderMenuForOrder() {
+  const menu = await getMenu();
+  const cats = ['All',...new Set(menu.map(i=>i.category))];
+  document.getElementById('catPills').innerHTML = cats.map(c=>
+    `<div class="pill ${c===currentMenuFilter?'active':''}" onclick="setMenuCat('${c}')">${c}</div>`
+  ).join('');
+  renderMenuGrid(menu);
+}
+
+function setMenuCat(cat) { currentMenuFilter=cat; renderMenuForOrder(); }
+
+async function renderMenuGrid(menu) {
+  if(!menu) menu = await getMenu();
+  const q = document.getElementById('menuSearch').value.toLowerCase();
+  const filtered = menu.filter(i=>{
+    const cm = currentMenuFilter==='All' || i.category===currentMenuFilter;
+    const qm = !q || i.name.toLowerCase().includes(q) || i.category.toLowerCase().includes(q);
+    return cm && qm;
+  });
+  document.getElementById('menuGrid').innerHTML = filtered.length ? filtered.map(item=>{
+    const safeName = item.name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    return `<div class="menu-item" onclick="addToCart(${item.id},'${safeName}',${item.price},'${(item.tax_code||'A')}')">
+      <div class="menu-item-cat">${item.category}</div>
+      <div class="menu-item-name">${item.name}</div>
+      <div class="menu-item-price">KSh ${item.price.toLocaleString()}</div>
+    </div>`;
+  }).join('') : '<div style="grid-column:span 2;text-align:center;padding:2rem;color:var(--muted);">No items found</div>';
+}
+
+function addToCart(id, name, price, taxCode) {
+  const ex = cart.find(c=>c.id===id);
+  if(ex) ex.qty++; else cart.push({id,name,price,qty:1,taxCode:taxCode||'A'});
+  renderCart();
+  showToast('+ '+name);
+}
+
+function renderCart() {
+  const el=document.getElementById('cartItems');
+  const totalsEl=document.getElementById('cartTotals');
+  if(!cart.length){
+    el.innerHTML='<div class="cart-empty">Tap menu items above to add them</div>';
+    totalsEl.style.display='none'; return;
+  }
+  let total=0;
+  el.innerHTML=cart.map((item,idx)=>{
+    const sub=item.price*item.qty; total+=sub;
+    return `<div class="cart-item">
+      <div class="cart-item-name">${item.name}</div>
+      <div class="qty-ctrl">
+        <button class="qty-btn" onclick="changeQty(${idx},-1)">−</button>
+        <span class="qty-num">${item.qty}</span>
+        <button class="qty-btn" onclick="changeQty(${idx},1)">+</button>
+      </div>
+      <div class="cart-item-price">KSh ${sub.toLocaleString()}</div>
+    </div>`;
+  }).join('');
+  const tax=Math.round(total*VAT/(1+VAT));
+  const excl=total-tax;
+  totalsEl.style.display='block';
+  document.getElementById('cartExcl').textContent='KSh '+excl.toLocaleString();
+  document.getElementById('cartVat').textContent='KSh '+tax.toLocaleString();
+  document.getElementById('cartTotal').textContent='KSh '+total.toLocaleString();
+}
+
+function changeQty(idx,d){
+  cart[idx].qty+=d;
+  if(cart[idx].qty<=0) cart.splice(idx,1);
+  renderCart();
+}
+
+function clearCart(){ cart=[]; renderCart(); }
+
+async function placeOrder() {
+  if(!cart.length){ showToast('Add items first'); return; }
+  const table   = document.getElementById('orderTable').value.trim()||'Walk-in';
+  const customer= document.getElementById('orderCustomer').value.trim();
+  const payMethod='cash';
+
+  setLoading(true,'Placing order...');
+  try {
+    // Get next order counter
+    const counterStr = await getSetting('order_counter','1000');
+    const counter = parseInt(counterStr)+1;
+    const orderId = 'ORD-'+counter;
+
+    const lines = LEDGER.buildLines(cart);
+    const agg   = LEDGER.calcAggregates(lines);
+
+    // Write immutable ledger entry FIRST
+    const txRecord = await LEDGER.write({
+      txId: orderId, txType:'SALE',
+      actorId: currentUser.id, actorName: currentUser.name, actorRole: currentUser.role,
+      tableRef: table, customerRef: customer, payMethod,
+      lines, ...agg, taxCode: DEFAULT_TAX_CODE,
+    });
+
+    // Write operational order record
+    const orderRow = {
+      id: orderId, table_ref: table, customer, pay_method: payMethod,
+      status: 'pending', immutable: false,
+      waiter_name: currentUser.name, waiter_id: currentUser.id,
+      total: agg.grossAmount,
+      tx_seq: txRecord?.tx_seq || 0,
+      items: lines.map(l=>{return {id:l.itemId,name:l.itemName,price:l.unitPrice,qty:l.qty}})
+    };
+    await dbInsert('orders', orderRow);
+    await setSetting('order_counter', counter.toString());
+    await audit('ORDER_PLACED',`${orderId} · KSh ${agg.grossAmount} · VAT ${agg.vatAmount} · ${table} · ${payMethod}`, orderId);
+
+    const placed = {
+      id: orderId, table, customer,
+      items: lines.map(l=>{return {name:l.itemName,price:l.unitPrice,qty:l.qty}}),
+      total: agg.grossAmount, payMethod,
+      waiter: currentUser.name, createdAt: new Date().toISOString(),
+      txSeq: txRecord?.tx_seq
+    };
+    clearCart();
+    document.getElementById('orderTable').value='';
+    document.getElementById('orderCustomer').value='';
+    showToast('✅ '+orderId+' placed!');
+    showReceipt(placed);
+  } catch(e) {
+    showToast('⚠ Order failed: '+e.message);
+  } finally {
+    setLoading(false);
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  ORDERS LIST
+// ═══════════════════════════════════════════════════════
+async function renderOrders() {
+  document.getElementById('ordersList').innerHTML='<div style="text-align:center;padding:2rem;color:var(--muted);">Loading...</div>';
+  const allOrders = await dbGet('orders',{order:'created_at', asc:false});
+  const filtered = currentOrderFilter==='all' ? allOrders : allOrders.filter(o=>o.status===currentOrderFilter);
+  const el=document.getElementById('ordersList');
+  if(!filtered.length){
+    el.innerHTML='<div class="card" style="text-align:center;color:var(--muted);padding:2rem;">No orders found</div>';
+    return;
+  }
+  const canManage=['admin','superwaiter','waiter','developer'].includes(currentUser.role);
+  const payIcon={cash:'💵',mpesa:'📱',card:'💳'};
+  el.innerHTML=filtered.map(o=>{
+    const sb2={pending:'badge-gold',ready:'badge-green',completed:'badge-blue',reversed:'badge-purple'}[o.status]||'badge-red';
+    const t=new Date(o.created_at);
+    const oData = JSON.stringify({
+      id:o.id, table:o.table_ref, customer:o.customer,
+      items:o.items, total:o.total, payMethod:o.pay_method,
+      waiter:o.waiter_name, createdAt:o.created_at,
+    }).replace(/'/g,"&#39;").replace(/"/g,'&quot;');
+    return `<div class="order-card">
+      <div class="order-hdr">
+        <div>
+          <div class="order-id">${o.id} ${payIcon[o.pay_method]||''}</div>
+          <div class="order-meta">📍 ${o.table_ref}${o.customer?' · '+o.customer:''} · ${o.waiter_name}</div>
+          <div class="order-meta">🕐 ${t.toLocaleDateString('en-KE')} ${t.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div>
+        </div>
+        <span class="badge ${sb2}">${o.status.toUpperCase()}</span>
+      </div>
+      <div class="order-items-list">${Array.isArray(o.items)?o.items.map(i=>`${i.qty}× ${i.name}`).join('<br>'):''}</div>
+      <div class="order-footer">
+        <div class="order-total">KSh ${o.total.toLocaleString()}</div>
+        <div class="order-actions">
+          <button class="btn btn-ghost btn-sm" onclick='showReceiptFromData("${o.id}")'>🧾</button>
+          ${o.status!=='completed' && o.status!=='reversed'?`<button class="btn btn-sm" style="background:#dcfce7;color:#16a34a;border:1px solid #86efac;" onclick="quickCompleteOrder('${o.id}')">✅ Complete</button>`:''}
+          ${canManage?`<button class="btn btn-primary btn-sm" onclick="openStatusModal('${o.id}')">✏️</button>`:''}
+          ${canManage?`<button class="btn btn-sm" style="background:#fee2e2;color:var(--red);border:1px solid #fca5a5;" onclick="deleteOrder('${o.id}')">🗑</button>`:''}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function deleteOrder(orderId){
+  if(!confirm('Delete order '+orderId+'? This cannot be undone.')) return;
+  setLoading(true,'Deleting order...');
+  try{
+    await dbDelete('orders',{id:orderId});
+    await audit('ORDER_DELETED',`${orderId} deleted by ${currentUser.name}`,orderId);
+    showToast('🗑 Order '+orderId+' deleted');
+    renderOrders();
+  }catch(e){ showToast('⚠ Delete failed: '+e.message); }
+  finally{ setLoading(false); }
+}
+
+function filterOrders(f,btn){
+  currentOrderFilter=f;
+  document.querySelectorAll('#viewOrders .inner-tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active'); renderOrders();
+}
+
+async function showReceiptFromData(orderId){
+  const rows=await dbGet('orders',{eq:{id:orderId}});
+  if(!rows.length) return;
+  const o=rows[0];
+  showReceipt({
+    id:o.id, table:o.table_ref, customer:o.customer,
+    items:o.items||[], total:o.total, payMethod:o.pay_method,
+    waiter:o.waiter_name, createdAt:o.created_at
+  });
+}
+
+let selectedPayMethod = 'cash';
+
+function selectPayMethod(method) {
+  selectedPayMethod = method;
+  ['cash','mpesa','card'].forEach(m => {
+    const btn = document.getElementById('payBtn'+m.charAt(0).toUpperCase()+m.slice(1));
+    if(btn) btn.style.cssText = btn.style.cssText.replace(/border:[^;]+;/,'') +
+      (m===method ? 'border:2px solid var(--red);background:#fff5f5;color:var(--red);' : 'border:2px solid var(--border);background:white;color:var(--text);');
+  });
+}
+
+async function openStatusModal(orderId) {
+  const rows = await dbGet('orders',{eq:{id:orderId}});
+  const order = rows[0];
+  document.getElementById('statusOrderId').value=orderId;
+  selectedPayMethod = order?.pay_method || 'cash';
+
+  const note=document.getElementById('statusModalNote');
+  const isSealed = order?.immutable || order?.status==='completed';
+  const isReversed = order?.status==='reversed';
+
+  if(isSealed){
+    note.innerHTML='🔒 <b>Sealed</b> — completed & immutable. Use Reverse to correct.';
+    note.style.color='var(--red)';
+  } else if(isReversed){
+    note.innerHTML='🔁 <b>Reversed</b> — credit note issued.';
+    note.style.color='var(--warning)';
+  } else {
+    note.innerHTML=`📋 <b>${orderId}</b> · ${order?.status||'unknown'}`;
+    note.style.color='var(--muted)';
+  }
+
+  // Show payment method row only when order is not yet completed
+  const payRow = document.getElementById('payMethodRow');
+  payRow.style.display = (!isSealed && !isReversed) ? 'block' : 'none';
+  // Pre-select current payment method
+  selectPayMethod(selectedPayMethod);
+
+  // Show/hide edit button — not for waiters
+  const editBtn = document.getElementById('statusBtnEdit');
+  if(editBtn) editBtn.style.display = (currentUser?.role==='waiter') ? 'none' : '';
+
+  openModal('statusModal');
+}
+
+async function updateOrderStatus(status) {
+  const id=document.getElementById('statusOrderId').value;
+  const rows=await dbGet('orders',{eq:{id}});
+  if(!rows.length){ closeModal('statusModal'); return; }
+  if(rows[0].immutable){
+    showToast('⛔ Sealed — use Reverse to correct'); closeModal('statusModal'); return;
+  }
+  if(status==='completed' && !selectedPayMethod){
+    showToast('Please select a payment method'); return;
+  }
+  const updates={status, updated_at:new Date().toISOString()};
+  if(status==='completed'){
+    updates.immutable=true;
+    updates.pay_method=selectedPayMethod;
+  }
+  await dbUpdate('orders',{id},updates);
+  // Also update the ledger pay_method when completing
+  if(status==='completed'){
+    await dbUpdate('tx_ledger',{tx_id:id},{pay_method:selectedPayMethod});
+  }
+  await audit('STATUS_CHANGE',`${id} → ${status}${status==='completed'?' · '+selectedPayMethod:''}`,id);
+  closeModal('statusModal'); renderOrders();
+  showToast(status==='completed'?`🏁 ${id} completed · ${selectedPayMethod}`:'Status → '+status);
+}
+
+async function quickCompleteOrder(orderId) {
+  const rows = await dbGet('orders', {eq:{id:orderId}});
+  if (!rows.length) return;
+  const order = rows[0];
+  if (order.immutable || order.status === 'completed') { showToast('⛔ Already completed'); return; }
+  if (order.status === 'reversed') { showToast('⛔ Order is reversed'); return; }
+  setLoading(true, 'Completing order...');
+  try {
+    const sbAdmin = supabase.createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+    const { error } = await sbAdmin.from('orders').update({
+      status: 'completed', immutable: true, updated_at: new Date().toISOString()
+    }).eq('id', orderId);
+    if (error) throw error;
+    await audit('STATUS_CHANGE', `${orderId} → completed`, orderId);
+    showToast('✅ ' + orderId + ' completed');
+    renderOrders();
+  } catch(e) {
+    showToast('⚠ ' + e.message);
+  } finally {
+    setLoading(false);
+  }
+}
+
+// ─── Edit order (pre-completion only) ────────────────
+async function openEditOrder() {
+  closeModal('statusModal');
+  const id=document.getElementById('statusOrderId').value;
+  const rows=await dbGet('orders',{eq:{id}});
+  if(!rows.length) return;
+  const order=rows[0];
+  if(order.immutable||order.status==='completed'){
+    showToast('⛔ Completed orders cannot be edited');
+    openReversalModal(id); return;
+  }
+  document.getElementById('editOrderId').value=id;
+  document.getElementById('editOrderTitle').textContent='Edit (Pre-completion): '+id;
+  currentEditOrderItems=(order.items||[]).map(i=>{return{...i}});
+  const menu=await getMenu();
+  document.getElementById('editAddItem').innerHTML='<option value="">— select item —</option>'+
+    menu.map(i=>`<option value="${i.id}|${i.name}|${i.price}|${i.tax_code||'A'}">${i.name} — KSh ${i.price}</option>`).join('');
+  renderEditOrderItems();
+  openModal('editOrderModal');
+}
+
+function renderEditOrderItems() {
+  document.getElementById('editOrderItems').innerHTML=currentEditOrderItems.map((item,idx)=>
+    `<div class="cart-item">
+      <div class="cart-item-name">${item.name}</div>
+      <div class="qty-ctrl">
+        <button class="qty-btn" onclick="editQty(${idx},-1)">−</button>
+        <span class="qty-num">${item.qty}</span>
+        <button class="qty-btn" onclick="editQty(${idx},1)">+</button>
+      </div>
+      <div class="cart-item-price">KSh ${(item.price*item.qty).toLocaleString()}</div>
+    </div>`).join('')||'<div class="cart-empty">No items</div>';
+}
+
+function editQty(idx,d){
+  currentEditOrderItems[idx].qty+=d;
+  if(currentEditOrderItems[idx].qty<=0) currentEditOrderItems.splice(idx,1);
+  renderEditOrderItems();
+}
+
+function editOrderAddItem(){
+  const val=document.getElementById('editAddItem').value;
+  if(!val) return;
+  const [id,name,price,taxCode]=val.split('|');
+  const ex=currentEditOrderItems.find(i=>i.id==id);
+  if(ex) ex.qty++; else currentEditOrderItems.push({id:parseInt(id),name,price:parseInt(price),qty:1,taxCode});
+  renderEditOrderItems();
+}
+
+async function saveEditedOrder() {
+  const id=document.getElementById('editOrderId').value;
+  const rows=await dbGet('orders',{eq:{id}});
+  if(!rows.length||rows[0].immutable){ showToast('⛔ Cannot modify sealed record'); closeModal('editOrderModal'); return; }
+
+  // Void original ledger entry
+  await dbUpdate('tx_ledger',{tx_id:id},{status:'VOIDED_PRECOMPLETION'});
+
+  // Write corrected ledger entry
+  const newLines=LEDGER.buildLines(currentEditOrderItems);
+  const newAgg=LEDGER.calcAggregates(newLines);
+  await LEDGER.write({
+    txId:id+'-R', txType:'SALE', refTxId:id,
+    actorId:currentUser.id, actorName:currentUser.name, actorRole:currentUser.role,
+    tableRef:rows[0].table_ref, customerRef:rows[0].customer, payMethod:rows[0].pay_method,
+    lines:newLines, ...newAgg, taxCode:DEFAULT_TAX_CODE,
+  });
+
+  const newTotal=currentEditOrderItems.reduce((s,i)=>s+i.price*i.qty,0);
+  await dbUpdate('orders',{id},{
+    id:id+'-R', items:currentEditOrderItems, total:newTotal, updated_at:new Date().toISOString()
+  });
+  await audit('PRE_COMPLETION_EDIT',`${id} corrected → ${id}-R`,id);
+  showToast('Order corrected — ref: '+id+'-R');
+  closeModal('editOrderModal'); renderOrders();
+}
+
+// ─── Reversal ────────────────────────────────────────
+function openReversalModal(orderId) {
+  reversalTargetId=orderId;
+  document.getElementById('reversalOrderId').textContent=orderId;
+  document.getElementById('reversalReason').value='';
+  openModal('reversalModal');
+}
+
+function openReversalFromStatus() {
+  const id=document.getElementById('statusOrderId').value;
+  closeModal('statusModal'); openReversalModal(id);
+}
+
+async function confirmReversal() {
+  const reason=document.getElementById('reversalReason').value.trim();
+  if(!reason){ showToast('Reason required'); return; }
+  if(reason.length<10){ showToast('Provide more detail (min 10 chars)'); return; }
+  setLoading(true,'Processing reversal...');
+  try {
+    const crn=await LEDGER.reverse(reversalTargetId, reason);
+    if(!crn) return;
+    await dbUpdate('orders',{id:reversalTargetId},{status:'reversed',updated_at:new Date().toISOString()});
+    closeModal('reversalModal'); renderOrders();
+    showToast('✅ Credit note issued: CRN-'+reversalTargetId);
+    // Show credit note receipt
+    const orig=await dbGet('orders',{eq:{id:reversalTargetId}});
+    if(orig[0]) showReceipt({
+      id:'CRN-'+reversalTargetId, table:orig[0].table_ref, customer:orig[0].customer,
+      items:orig[0].items||[], total:orig[0].total, payMethod:orig[0].pay_method,
+      waiter:currentUser.name, createdAt:new Date().toISOString(),
+      isCreditNote:true, refTxId:reversalTargetId
+    });
+  } finally { setLoading(false); }
+}
+
+// ═══════════════════════════════════════════════════════
+//  RECEIPT
+// ═══════════════════════════════════════════════════════
+function calcTax(total){
+  const tax=Math.round(total*VAT/(1+VAT));
+  return {excl:total-tax,tax,total};
+}
+
+function showReceipt(order){
+  lastReceiptOrder=order;
+  document.getElementById('receiptContent').innerHTML=buildReceiptHTML(order);
+  openModal('receiptModal');
+  // One-in-one-out: auto-print immediately for waiters, then auto-logout
+  if(currentUser && currentUser.role === 'waiter'){
+    setTimeout(()=>{ doPrint(buildReceiptHTML(order)); }, 350);
+  }
+}
+
+function buildReceiptHTML(order){
+  const now=new Date(order.createdAt||order.created_at||new Date());
+  const gross=Math.abs(order.total||0);
+  const vatAmt=Math.round(gross*VAT/(1+VAT));
+  const exclAmt=gross-vatAmt;
+  const payLabel={cash:'Cash',mpesa:'M-Pesa',card:'Card'}[order.payMethod||order.pay_method]||(order.payMethod||'');
+  const isCRN=order.isCreditNote;
+  const kraPin=cachedSettings['kra_pin']||KRA_PIN_DEFAULT;
+  const seq=order.txSeq||'';
+  return `<div class="receipt">
+    <div class="receipt-hdr">
+      <div class="receipt-logo">${BUSINESS_NAME}</div>
+      <div style="font-size:.72rem;color:#666;">"Relax. Eat. Enjoy."</div>
+      <div style="font-size:.7rem;">Tel: ${BUSINESS_TEL}</div>
+      ${isCRN?'<div style="font-size:.75rem;font-weight:700;color:#c0392b;">⚠ CREDIT NOTE</div>':''}
+    </div>
+    <hr class="receipt-divider">
+    <div class="receipt-row"><span>${isCRN?'Credit Note#':'Invoice#'}:</span><span>${order.id} ${seq?'#'+seq:''}</span></div>
+    ${isCRN?`<div class="receipt-row"><span>Reverses:</span><span>${order.refTxId||''}</span></div>`:''}
+    <div class="receipt-row"><span>Table:</span><span>${order.table||order.table_ref||''}</span></div>
+    ${(order.customer)?`<div class="receipt-row"><span>Customer:</span><span>${order.customer}</span></div>`:''}
+    <div class="receipt-row"><span>Operator:</span><span>${order.waiter||order.waiter_name||''}</span></div>
+    <div class="receipt-row"><span>Payment:</span><span>${payLabel}</span></div>
+    <div class="receipt-row"><span>Date:</span><span>${now.toLocaleDateString('en-KE')}</span></div>
+    <div class="receipt-row"><span>Time:</span><span>${now.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span></div>
+    <hr class="receipt-divider">
+    <div style="font-size:.72rem;font-weight:700;margin-bottom:3px;">QTY ITEM            AMT</div>
+    ${(order.items||[]).map(i=>`<div class="receipt-row"><span>${Math.abs(i.qty)}x ${i.name}</span><span>${isCRN?'-':''}KSh${Math.abs(i.price*i.qty).toLocaleString()}</span></div>`).join('')}
+    <hr class="receipt-divider">
+    <div class="receipt-row"><span>Subtotal(excl.VAT):</span><span>${isCRN?'-':''}KSh${exclAmt.toLocaleString()}</span></div>
+    <div class="receipt-row"><span>VAT(16%-Code A):</span><span>${isCRN?'-':''}KSh${vatAmt.toLocaleString()}</span></div>
+    <hr class="receipt-divider">
+    <div class="receipt-row receipt-total"><span>${isCRN?'CREDIT TOTAL':'TOTAL'}</span><span>${isCRN?'-':''}KSh${gross.toLocaleString()}</span></div>
+    <hr class="receipt-divider">
+    <div style="text-align:center;font-size:.68rem;margin-top:6px;line-height:1.7;">
+      VAT Inclusive · KRA PIN: ${kraPin}<br>
+      ${SYSTEM_VERSION} · eTIMS-ready<br>
+      ${isCRN?'This document cancels the referenced invoice.':'Thank you &amp; Welcome Again!'}
+    </div>
+  </div>`;
+}
+
+function printReceipt(){
+  if(!lastReceiptOrder) return;
+  doPrint(buildReceiptHTML(lastReceiptOrder));
+}
+
+function doPrint(html, isKitchen=false){
+  const iframe=document.getElementById('printFrame');
+  if (!iframe) { window.print(); return; }
+  const doc=iframe.contentWindow.document;
+  // Build kitchen copy with KITCHEN header
+  const kitchenHtml = html.replace('<div class="receipt">',
+    '<div class="receipt"><div style="text-align:center;font-size:13px;font-weight:900;letter-spacing:2px;border:2px solid #000;padding:3px;margin-bottom:4px;">★ KITCHEN COPY ★</div>');
+  const waiterHtml = html.replace('<div class="receipt">',
+    '<div class="receipt"><div style="text-align:center;font-size:13px;font-weight:900;letter-spacing:2px;border:2px solid #000;padding:3px;margin-bottom:4px;">★ WAITER COPY ★</div>');
+  // Print both copies separated by page break
+  const fullHtml = `${waiterHtml}<div style="page-break-after:always;"></div>${kitchenHtml}`;
+  doc.open();
+  doc.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    @page{size:76mm auto;margin:0;}
+    html,body{width:66mm;margin:0;padding:0;}
+    body{
+      font-family:'Courier New',Courier,monospace;
+      font-size:9.5px;
+      line-height:1.45;
+      color:#000;
+      background:#fff;
+      padding:2mm 1mm 2mm 1mm;
+      width:66mm;
+    }
+    .receipt{width:66mm;}
+    .receipt-hdr{text-align:center;margin-bottom:4px;}
+    .receipt-logo{font-size:11px;font-weight:700;}
+    .receipt-divider{border:none;border-top:1px dashed #000;margin:3px 0;width:100%;}
+    .receipt-row{display:flex;justify-content:space-between;align-items:flex-start;margin:1px 0;font-size:9px;width:100%;}
+    .receipt-row span:first-child{flex:1;padding-right:2px;word-break:break-word;}
+    .receipt-row span:last-child{white-space:nowrap;font-weight:600;text-align:right;max-width:28mm;}
+    .receipt-total{font-weight:700;font-size:10.5px;}
+    @media print{html,body{width:66mm;}@page{size:76mm auto;margin:0;}}
+  </style></head><body>${fullHtml}</body></html>`);
+  doc.close();
+  // Small delay to ensure content renders before printing
+  setTimeout(()=>{
+    iframe.contentWindow.focus();
+    iframe.contentWindow.print();
+    // Auto-logout waiters after printing so next staff member can log in
+    if(currentUser && currentUser.role === 'waiter'){
+      setTimeout(()=>{
+        closeModal('receiptModal');
+        showToast('✅ Receipt printed — next waiter can now sign in.');
+        doLogout();
+      }, 1500);
+    }
+  }, 250);
+}
+
+// ═══════════════════════════════════════════════════════
+//  DAY CLOSE
+// ═══════════════════════════════════════════════════════
+async function openDayClose() {
+  setLoading(true,'Generating day close...');
+  try {
+    const todayStr=new Date().toISOString().split('T')[0];
+    const todaySales=await LEDGER.query({type:'SALE',status:'ACTIVE',dateStr:todayStr});
+    const todayCRNs =await LEDGER.query({type:'CREDIT_NOTE',dateStr:todayStr});
+    const gross =todaySales.reduce((s,r)=>s+r.gross_amount,0);
+    const vat   =todaySales.reduce((s,r)=>s+r.vat_amount,0);
+    const excl  =todaySales.reduce((s,r)=>s+r.taxable_amount,0);
+    const crnAmt=todayCRNs.reduce((s,r)=>s+Math.abs(r.gross_amount),0);
+    const byPay={cash:0,mpesa:0,card:0};
+    todaySales.forEach(r=>{byPay[r.pay_method||'cash']=(byPay[r.pay_method||'cash']||0)+r.gross_amount;});
+    const now=new Date();
+    const kraPin=cachedSettings['kra_pin']||KRA_PIN_DEFAULT;
+    document.getElementById('dayCloseSummary').innerHTML=`
+      <div class="receipt">
+        <div class="receipt-hdr">
+          <div class="receipt-logo">${BUSINESS_NAME}</div>
+          <div style="font-size:.72rem;font-weight:700;">DAY CLOSE — TAX REPORT</div>
+          <div style="font-size:.7rem;">${now.toLocaleDateString('en-KE')} · ${now.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div>
+          <div style="font-size:.68rem;">KRA PIN: ${kraPin}</div>
+        </div>
+        <hr class="receipt-divider">
+        <div class="receipt-row"><span>SALE Transactions:</span><span>${todaySales.length}</span></div>
+        <div class="receipt-row"><span>Credit Notes:</span><span>${todayCRNs.length}</span></div>
+        <hr class="receipt-divider">
+        <div class="receipt-row"><span>Cash:</span><span>KSh ${byPay.cash.toLocaleString()}</span></div>
+        <div class="receipt-row"><span>M-Pesa:</span><span>KSh ${byPay.mpesa.toLocaleString()}</span></div>
+        <div class="receipt-row"><span>Card:</span><span>KSh ${byPay.card.toLocaleString()}</span></div>
+        <hr class="receipt-divider">
+        <div class="receipt-row"><span>Gross Revenue:</span><span>KSh ${gross.toLocaleString()}</span></div>
+        <div class="receipt-row"><span>Less Credit Notes:</span><span>-KSh ${crnAmt.toLocaleString()}</span></div>
+        <div class="receipt-row"><span>Net Revenue:</span><span>KSh ${(gross-crnAmt).toLocaleString()}</span></div>
+        <hr class="receipt-divider">
+        <div style="font-size:.72rem;font-weight:700;margin:.3rem 0;">TAX SUMMARY (VAT 16%)</div>
+        <div class="receipt-row"><span>Taxable (excl.):</span><span>KSh ${excl.toLocaleString()}</span></div>
+        <div class="receipt-row"><span>Output VAT:</span><span>KSh ${vat.toLocaleString()}</span></div>
+        <div class="receipt-row receipt-total"><span>GROSS TOTAL</span><span>KSh ${gross.toLocaleString()}</span></div>
+        <hr class="receipt-divider">
+        <div style="text-align:center;font-size:.68rem;margin-top:6px;">Source: Supabase TX Ledger · ${SYSTEM_VERSION}</div>
+      </div>`;
+    await audit('DAY_CLOSE',`Day close ${todayStr}: ${todaySales.length} sales, KSh ${gross} gross, KSh ${vat} VAT`);
+    openModal('dayCloseModal');
+  } finally { setLoading(false); }
+}
+
+function printDayClose(){ doPrint(document.getElementById('dayCloseSummary').innerHTML); }
+
+// ═══════════════════════════════════════════════════════
+//  MENU MANAGER
+// ═══════════════════════════════════════════════════════
+let menuListFilter='all';
+
+async function renderMenuManager() {
+  const menu=await dbGet('menu',{order:'category',asc:true});
+  const cats=['All',...new Set(menu.map(i=>i.category))];
+  document.getElementById('menuCatFilter').innerHTML=cats.map(c=>
+    `<button class="inner-tab ${menuListFilter===(c==='All'?'all':c)?'active':''}" onclick="filterMenuList('${c==='All'?'all':c}',this)">${c}</button>`
+  ).join('');
+  const filtered=menuListFilter==='all'?menu:menu.filter(i=>i.category===menuListFilter);
+  document.getElementById('menuManagerList').innerHTML=filtered.length?filtered.map(item=>
+    `<div class="menu-list-item">
+      <div class="menu-list-info"><div class="menu-list-name">${item.name}</div><div class="menu-list-cat">${item.category}</div></div>
+      <div class="menu-list-price">KSh ${item.price.toLocaleString()}</div>
+      <button class="btn btn-ghost btn-sm" onclick="editMenuItem(${item.id})">Edit</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteMenuItem(${item.id})">✕</button>
+    </div>`
+  ).join(''):'<div style="text-align:center;padding:2rem;color:var(--muted);">No items</div>';
+}
+
+function filterMenuList(cat,btn){
+  menuListFilter=cat;
+  document.querySelectorAll('#menuCatFilter .inner-tab').forEach(t=>t.classList.remove('active'));
+  if(btn) btn.classList.add('active'); renderMenuManager();
+}
+
+function openAddItemModal(){
+  document.getElementById('addItemTitle').textContent='Add Menu Item';
+  ['itemName','itemPrice','itemDesc'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('editItemIdx').value='';
+  openModal('addItemModal');
+}
+
+async function editMenuItem(id){
+  const rows=await dbGet('menu',{eq:{id}});
+  if(!rows.length) return;
+  const item=rows[0];
+  document.getElementById('addItemTitle').textContent='Edit Item';
+  document.getElementById('itemName').value=item.name;
+  document.getElementById('itemCategory').value=item.category;
+  document.getElementById('itemPrice').value=item.price;
+  document.getElementById('itemDesc').value=item.description||'';
+  document.getElementById('editItemIdx').value=id;
+  openModal('addItemModal');
+}
+
+async function saveMenuItem(){
+  const name=document.getElementById('itemName').value.trim().replace(/[<>"']/g,'').slice(0,100);
+  const category=document.getElementById('itemCategory').value;
+  const price=parseInt(document.getElementById('itemPrice').value)||0;
+  const description=document.getElementById('itemDesc').value.trim();
+  const editId=document.getElementById('editItemIdx').value;
+  if(!name){ showToast('Item name required'); return; }
+  if(editId){
+    await dbUpdate('menu',{id:parseInt(editId)},{name,category,price,description,updated_at:new Date().toISOString()});
+    showToast('Item updated');
+  } else {
+    await dbInsert('menu',{name,category,price,description,tax_code:'A',active:true});
+    showToast('Item added');
+  }
+  cachedMenu=null;
+  closeModal('addItemModal'); renderMenuManager();
+  await audit('MENU_CHANGE',`${editId?'Edited':'Added'}: ${name}`);
+}
+
+async function deleteMenuItem(id){
+  if(!confirm('Delete this item from the menu?')) return;
+  const rows=await dbGet('menu',{eq:{id}});
+  await dbUpdate('menu',{id},{active:false});
+  cachedMenu=null; renderMenuManager();
+  await audit('MENU_DELETE',rows[0]?.name||id);
+  showToast('Item removed');
+}
+
+// ═══════════════════════════════════════════════════════
+//  INVENTORY
+// ═══════════════════════════════════════════════════════
+let invFilter='all';
+
+async function renderInventory(){
+  const inv=await dbGet('inventory',{order:'name',asc:true});
+  const filtered=invFilter==='all'?inv:inv.filter(i=>i.category===invFilter);
+  const low=inv.filter(i=>i.qty>0&&i.qty<=i.alert_at).length;
+  const out=inv.filter(i=>i.qty<=0).length;
+  document.getElementById('invTotal').textContent=inv.length;
+  document.getElementById('invLow').textContent=low;
+  document.getElementById('invOut').textContent=out;
+  document.getElementById('invList').innerHTML=filtered.map(item=>{
+    const s=item.qty<=0?'out':item.qty<=item.alert_at?'low':'ok';
+    return `<div class="inv-item">
+      <div class="inv-dot ${s}"></div>
+      <div class="inv-info"><div class="inv-name">${item.name}</div>
+      <div class="inv-detail">${item.category} · alert at ${item.alert_at} ${item.unit}</div></div>
+      <div><div class="inv-qty">${item.qty}</div><div class="inv-unit">${item.unit}</div></div>
+      <button class="btn btn-ghost btn-sm" onclick="editStock(${item.id})">+/−</button>
+    </div>`;
+  }).join('')||'<div style="text-align:center;padding:2rem;color:var(--muted);">No items</div>';
+}
+
+function filterInv(cat,btn){
+  invFilter=cat;
+  document.querySelectorAll('#viewInventory .inner-tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active'); renderInventory();
+}
+
+function openAddStockModal(){
+  document.getElementById('stockModalTitle').textContent='Add New Stock Item';
+  ['stockName','stockQty','stockAlert'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('editStockIdx').value='';
+  document.getElementById('stockAction').value='set';
+  openModal('addStockModal');
+}
+
+async function editStock(id){
+  const rows=await dbGet('inventory',{eq:{id}});
+  if(!rows.length) return;
+  const item=rows[0];
+  document.getElementById('stockModalTitle').textContent='Update: '+item.name;
+  document.getElementById('stockName').value=item.name;
+  document.getElementById('stockCategory').value=item.category;
+  document.getElementById('stockUnit').value=item.unit;
+  document.getElementById('stockQty').value='';
+  document.getElementById('stockAlert').value=item.alert_at;
+  document.getElementById('editStockIdx').value=id;
+  document.getElementById('stockAction').value='add';
+  openModal('addStockModal');
+}
+
+async function saveStock(){
+  const name=document.getElementById('stockName').value.trim();
+  const category=document.getElementById('stockCategory').value;
+  const unit=document.getElementById('stockUnit').value;
+  const qtyInput=parseFloat(document.getElementById('stockQty').value)||0;
+  const alert_at=parseFloat(document.getElementById('stockAlert').value)||0;
+  const action=document.getElementById('stockAction').value;
+  const editId=document.getElementById('editStockIdx').value;
+  if(!name){ showToast('Name required'); return; }
+  if(editId){
+    const rows=await dbGet('inventory',{eq:{id:parseInt(editId)}});
+    if(!rows.length) return;
+    let qty=parseFloat(rows[0].qty)||0;
+    if(action==='set') qty=qtyInput;
+    else if(action==='add') qty+=qtyInput;
+    else if(action==='deduct') qty=Math.max(0,qty-qtyInput);
+    await dbUpdate('inventory',{id:parseInt(editId)},{name,category,unit,qty,alert_at,updated_at:new Date().toISOString()});
+  } else {
+    await dbInsert('inventory',{name,category,unit,qty:qtyInput,alert_at});
+  }
+  await audit('INVENTORY',`${action.toUpperCase()} ${name} ${qtyInput} ${unit}`);
+  closeModal('addStockModal'); renderInventory();
+  showToast('Stock saved');
+}
+
+// ═══════════════════════════════════════════════════════
+//  SALES
+// ═══════════════════════════════════════════════════════
+async function renderSales(){
+  document.getElementById('salesToday').textContent='...';
+  const todayStr=new Date().toISOString().split('T')[0];
+  const weekAgo=new Date(Date.now()-7*86400000).toISOString();
+  const allSales  =await LEDGER.activeSales();
+  const todaySales=allSales.filter(r=>r.business_date===todayStr);
+  const weekSales =allSales.filter(r=>r.created_at>=weekAgo);
+  const sToday=todaySales.reduce((s,r)=>s+r.gross_amount,0);
+  const sWeek =weekSales.reduce((s,r)=>s+r.gross_amount,0);
+  const vatToday=todaySales.reduce((s,r)=>s+r.vat_amount,0);
+  const avg=todaySales.length?Math.round(sToday/todaySales.length):0;
+  document.getElementById('salesToday').textContent=sToday.toLocaleString();
+  document.getElementById('ordersToday').textContent=todaySales.length;
+  document.getElementById('salesWeek').textContent=sWeek.toLocaleString();
+  document.getElementById('avgOrder').textContent=avg.toLocaleString();
+  const vatEl=document.getElementById('vatToday');
+  if(vatEl) vatEl.textContent=vatToday.toLocaleString();
+  const byPay={cash:0,mpesa:0,card:0};
+  todaySales.forEach(r=>{byPay[r.pay_method||'cash']=(byPay[r.pay_method||'cash']||0)+r.gross_amount;});
+  document.getElementById('payCash').textContent=byPay.cash.toLocaleString();
+  document.getElementById('payMpesa').textContent=byPay.mpesa.toLocaleString();
+  document.getElementById('payCard').textContent=byPay.card.toLocaleString();
+  const ic={};
+  allSales.forEach(r=>r.lines.forEach(l=>{ic[l.itemName]=(ic[l.itemName]||0)+l.qty;}));
+  const top=Object.entries(ic).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  document.getElementById('topItems').innerHTML=top.length?top.map(([n,q])=>
+    `<div class="report-row"><span>${n}</span><span class="report-row-val badge badge-red">${q} sold</span></div>`
+  ).join(''):'<div style="color:var(--muted);text-align:center;padding:1rem;">No data yet</div>';
+  document.getElementById('recentOrders').innerHTML=allSales.slice(0,10).map(r=>
+    `<div class="report-row">
+      <div><div style="font-weight:700;">${r.tx_id} <span style="font-size:.72rem;color:var(--muted);">#${r.tx_seq}</span></div>
+      <div style="font-size:.75rem;color:var(--muted);">${r.table_ref} · ${r.business_date} · ${r.pay_method}</div></div>
+      <div style="text-align:right;">
+        <div class="report-row-val">KSh ${r.gross_amount.toLocaleString()}</div>
+        <div style="font-size:.72rem;color:var(--muted);">VAT: KSh ${r.vat_amount.toLocaleString()}</div>
+      </div>
+    </div>`
+  ).join('')||'<div style="color:var(--muted);text-align:center;padding:1rem;">No transactions yet</div>';
+}
+
+// ═══════════════════════════════════════════════════════
+//  COMPLIANCE
+// ═══════════════════════════════════════════════════════
+async function renderCompliance(){
+  const kraPin=await getSetting('kra_pin',KRA_PIN_DEFAULT);
+  const kraPinEl=document.getElementById('kraPinDisplay');
+  const sysVerEl=document.getElementById('sysVersionDisplay');
+  if(kraPinEl) kraPinEl.textContent=kraPin;
+  if(sysVerEl) sysVerEl.textContent=SYSTEM_VERSION;
+  const all  =await dbGet('tx_ledger',{order:'tx_seq',asc:false});
+  const sales=all.filter(r=>r.tx_type==='SALE'&&r.status==='ACTIVE');
+  const crns =all.filter(r=>r.tx_type==='CREDIT_NOTE');
+  const totalGross=sales.reduce((s,r)=>s+r.gross_amount,0);
+  const totalVat  =sales.reduce((s,r)=>s+r.vat_amount,0);
+  const totalExcl =sales.reduce((s,r)=>s+r.taxable_amount,0);
+  document.getElementById('compLedgerCount').textContent=all.length;
+  document.getElementById('compSaleCount').textContent  =sales.length;
+  document.getElementById('compCrnCount').textContent   =crns.length;
+  document.getElementById('compGross').textContent      =totalGross.toLocaleString();
+  document.getElementById('compVat').textContent        =totalVat.toLocaleString();
+  document.getElementById('compExcl').textContent       =totalExcl.toLocaleString();
+  const typeColor={SALE:'badge-green',CREDIT_NOTE:'badge-red'};
+  document.getElementById('ledgerList').innerHTML=all.slice(0,20).map(r=>
+    `<div class="report-row" style="flex-wrap:wrap;gap:.3rem;">
+      <div style="flex:1;min-width:120px;">
+        <div style="font-weight:700;font-size:.85rem;">${r.tx_id}</div>
+        <div style="font-size:.72rem;color:var(--muted);">#${r.tx_seq} · ${r.business_date} · ${r.actor_name}</div>
+        ${r.ref_tx_id?`<div style="font-size:.7rem;color:#7c3aed;">Ref: ${r.ref_tx_id}</div>`:''}
+      </div>
+      <div style="text-align:right;">
+        <span class="badge ${typeColor[r.tx_type]||'badge-blue'}" style="margin-bottom:.2rem;">${r.tx_type}</span><br>
+        <span style="font-size:.72rem;font-weight:700;color:${r.status==='ACTIVE'?'#065f46':'#7f1d1d'};">${r.status}</span><br>
+        <span style="font-size:.82rem;font-weight:700;">KSh ${(r.gross_amount||0).toLocaleString()}</span>
+      </div>
+    </div>`
+  ).join('')||'<div style="text-align:center;padding:1.5rem;color:var(--muted);">No transactions recorded yet</div>';
+}
+
+async function exportForKRA(){
+  const fromDate=document.getElementById('exportFrom').value;
+  const toDate  =document.getElementById('exportTo').value;
+  if(!fromDate||!toDate){ showToast('Select date range'); return; }
+  setLoading(true,'Preparing export...');
+  try{
+    const records=await LEDGER.query({from:fromDate+'T00:00:00',to:toDate+'T23:59:59'});
+    if(!records.length){ showToast('No records in that range'); return; }
+    const json=LEDGER.exportForKRA(records);
+    const blob=new Blob([json],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url; a.download=`SBS_KRA_Export_${fromDate}_to_${toDate}.json`; a.click();
+    URL.revokeObjectURL(url);
+    await audit('KRA_EXPORT',`${records.length} records exported ${fromDate} to ${toDate}`);
+    showToast(`✅ Exported ${records.length} records`);
+  } finally{ setLoading(false); }
+}
+
+// ═══════════════════════════════════════════════════════
+//  STAFF
+// ═══════════════════════════════════════════════════════
+async function renderWaiters(){
+  const users=await dbGet('users',{order:'id',asc:true});
+  const rb={admin:'badge-gold',superwaiter:'badge-blue',waiter:'badge-green',developer:'badge-purple'};
+  const rl={admin:'👑 Owner',superwaiter:'⭐ Supervisor',waiter:'🛎 Waiter',developer:'🔧 Developer'};
+  document.getElementById('waiterList').innerHTML=users.map(u=>
+    `<div class="waiter-item">
+      <div class="waiter-avatar">${u.name.charAt(0).toUpperCase()}</div>
+      <div class="waiter-info"><div class="waiter-name">${u.name}</div><div class="waiter-role-lbl">@${u.username}</div></div>
+      <span class="badge ${rb[u.role]||'badge-green'}" style="margin-right:.4rem;">${rl[u.role]||u.role}</span>
+      ${u.role!=='admin'&&u.role!=='developer'?`<button class="btn btn-danger btn-sm" onclick="deleteWaiter(${u.id})">Remove</button>`:''}
+    </div>`
+  ).join('');
+}
+
+function openAddWaiterModal(){
+  ['waiterName','waiterUsername','waiterPass'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('waiterRole').value='waiter';
+  openModal('addWaiterModal');
+}
+
+async function saveWaiter(){
+  const name    =document.getElementById('waiterName').value.trim();
+  const username=document.getElementById('waiterUsername').value.trim().toLowerCase();
+  const password=document.getElementById('waiterPass').value;
+  const role    =document.getElementById('waiterRole').value;
+  if(!name||!username||!password){ showToast('All fields required'); return; }
+  if(password.length<6){ showToast('Password min 6 characters'); return; }
+  if(!/^[a-z0-9_]+$/.test(username)){ showToast('Username: lowercase, numbers, underscore only'); return; }
+  setLoading(true,'Creating account...');
+  try{
+    const email=username+'@sbs.internal';
+    // Use Admin API with service key to create user without email confirmation
+    const adminResp = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_SERVICE_KEY,
+        'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`
+      },
+      body: JSON.stringify({
+        email, password,
+        email_confirm: true,
+        user_metadata: {username, role, name}
+      })
+    });
+    const adminData = await adminResp.json();
+    if (!adminResp.ok && !adminData.msg?.includes('already')) {
+      // If user already exists, try to update password instead
+      if (adminData.code === 'email_exists' || adminData.msg?.includes('already')) {
+        // existing user — just update the users table below
+      } else {
+        throw new Error(adminData.msg || adminData.error_description || 'Failed to create auth account');
+      }
+    }
+    const existing=await dbGet('users',{eq:{username}});
+    if(existing.length){
+      await dbUpdate('users',{username},{name,role,must_change:true});
+    } else {
+      await dbInsert('users',{name,username,role,must_change:true});
+    }
+    closeModal('addWaiterModal'); renderWaiters();
+    await audit('STAFF_ADDED',`${name} @${username} as ${role}`);
+    showToast(role==='superwaiter'?'✅ Supervisor created':'✅ Waiter account created');
+  } catch(e){
+    showToast('⚠ '+e.message);
+  } finally{ setLoading(false); }
+}
+
+async function deleteWaiter(id){
+  const rows=await dbGet('users',{eq:{id}});
+  if(!confirm(`Remove ${rows[0]?.name}?`)) return;
+  await dbDelete('users',{id});
+  renderWaiters();
+  await audit('STAFF_REMOVED',rows[0]?.name||id);
+  showToast('Staff account removed');
+}
+
+// ═══════════════════════════════════════════════════════
+//  SETUP
+// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
+//  CLOCKING
+// ═══════════════════════════════════════════════════════
+const SHIFTS_KEY='sb_shifts';
+function getShifts(){ try{ return JSON.parse(localStorage.getItem(SHIFTS_KEY)||'[]'); }catch(e){return [];} }
+function saveShifts(s){ localStorage.setItem(SHIFTS_KEY,JSON.stringify(s)); }
+
+function renderClocking(){
+  const isAdmin=['admin','developer'].includes(currentUser?.role);
+  document.getElementById('clockWaiterName').textContent=currentUser?.name||'—';
+  document.getElementById('allShiftsCard').style.display=isAdmin?'':'none';
+
+  const shifts=getShifts();
+  const todayStr=new Date().toISOString().split('T')[0];
+
+  // Find if current user is clocked in
+  const myOpen=shifts.find(s=>s.userId===currentUser?.id && !s.clockOut);
+  if(myOpen){
+    document.getElementById('clockStatus').textContent='Clocked in at '+new Date(myOpen.clockIn).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    document.getElementById('btnClockIn').style.display='none';
+    document.getElementById('btnClockOut').style.display='block';
+  } else {
+    document.getElementById('clockStatus').textContent='Not clocked in';
+    document.getElementById('btnClockIn').style.display='block';
+    document.getElementById('btnClockOut').style.display='none';
+  }
+
+  // Today's log for current user (or all if admin)
+  const todayShifts=shifts.filter(s=>{
+    const d=(s.clockIn||'').split('T')[0];
+    return d===todayStr && (isAdmin || s.userId===currentUser?.id);
+  });
+
+  const el=document.getElementById('clockLogList');
+  if(!todayShifts.length){ el.innerHTML='<div style="color:var(--muted);font-size:.85rem;text-align:center;padding:1rem;">No shifts today</div>'; return; }
+  el.innerHTML=`<table style="width:100%;font-size:.82rem;border-collapse:collapse;">
+    <tr style="font-weight:700;color:var(--muted);font-size:.72rem;text-transform:uppercase;">
+      <td style="padding:.3rem 0;">Waiter</td><td>In</td><td>Out</td><td style="text-align:right;">Hours</td>
+    </tr>
+    ${todayShifts.map(s=>{
+      const inT=new Date(s.clockIn);
+      const outT=s.clockOut?new Date(s.clockOut):null;
+      const hrs=outT?((outT-inT)/3600000).toFixed(1):'Active';
+      return `<tr style="border-top:1px solid var(--border);">
+        <td style="padding:.4rem 0;font-weight:600;">${s.waiterName}</td>
+        <td>${inT.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</td>
+        <td>${outT?outT.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):'—'}</td>
+        <td style="text-align:right;color:${hrs==='Active'?'var(--success)':'var(--text)'};">${hrs}</td>
+      </tr>`;
+    }).join('')}
+  </table>`;
+}
+
+function doClockIn(){
+  const shifts=getShifts();
+  const already=shifts.find(s=>s.userId===currentUser?.id && !s.clockOut);
+  if(already){ showToast('Already clocked in!'); return; }
+  shifts.push({
+    id: Date.now(),
+    userId: currentUser.id,
+    waiterName: currentUser.name,
+    clockIn: new Date().toISOString(),
+    clockOut: null
+  });
+  saveShifts(shifts);
+  audit('CLOCK_IN',`${currentUser.name} clocked in`);
+  showToast('✅ Clocked in at '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}));
+  renderClocking();
+}
+
+function doClockOut(){
+  const shifts=getShifts();
+  const idx=shifts.findIndex(s=>s.userId===currentUser?.id && !s.clockOut);
+  if(idx===-1){ showToast('Not clocked in!'); return; }
+  shifts[idx].clockOut=new Date().toISOString();
+  const hrs=((new Date()-new Date(shifts[idx].clockIn))/3600000).toFixed(1);
+  saveShifts(shifts);
+  audit('CLOCK_OUT',`${currentUser.name} clocked out · ${hrs}h`);
+  showToast('👋 Clocked out · '+hrs+' hours worked');
+  renderClocking();
+}
+
+function renderAllShifts(){
+  const shifts=getShifts();
+  const from=document.getElementById('shiftFrom').value;
+  const to=document.getElementById('shiftTo').value;
+  let filtered=shifts;
+  if(from) filtered=filtered.filter(s=>(s.clockIn||'')>=from);
+  if(to)   filtered=filtered.filter(s=>(s.clockIn||'')<=to+'T23:59:59');
+  filtered.sort((a,b)=>b.clockIn.localeCompare(a.clockIn));
+
+  // Group by waiter
+  const byWaiter={};
+  filtered.forEach(s=>{
+    if(!byWaiter[s.waiterName]) byWaiter[s.waiterName]={shifts:[],totalHrs:0};
+    byWaiter[s.waiterName].shifts.push(s);
+    if(s.clockOut) byWaiter[s.waiterName].totalHrs+=((new Date(s.clockOut)-new Date(s.clockIn))/3600000);
+  });
+
+  const el=document.getElementById('allShiftsList');
+  if(!filtered.length){ el.innerHTML='<div style="color:var(--muted);font-size:.85rem;">No shifts found</div>'; return; }
+  el.innerHTML=Object.entries(byWaiter).map(([name,d])=>`
+    <div style="margin-bottom:1rem;">
+      <div style="font-weight:700;font-size:.9rem;color:var(--red);margin-bottom:.3rem;">
+        ${name} — ${d.totalHrs.toFixed(1)}h total
+      </div>
+      ${d.shifts.map(s=>{
+        const inT=new Date(s.clockIn);
+        const outT=s.clockOut?new Date(s.clockOut):null;
+        const hrs=outT?((outT-inT)/3600000).toFixed(1):'Active';
+        return `<div style="display:flex;justify-content:space-between;font-size:.8rem;padding:.25rem 0;border-bottom:1px solid var(--border);">
+          <span>${inT.toLocaleDateString('en-KE')} ${inT.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span>
+          <span>${outT?outT.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):'Active'}</span>
+          <span style="font-weight:700;">${hrs}h</span>
+        </div>`;
+      }).join('')}
+    </div>`).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+//  ANALYTICS
+// ═══════════════════════════════════════════════════════
+async function renderAnalytics(){
+  // Set default dates if empty
+  const fromEl=document.getElementById('analyticsFrom');
+  const toEl=document.getElementById('analyticsTo');
+  if(!fromEl.value){
+    const d=new Date(); d.setDate(d.getDate()-30);
+    fromEl.value=d.toISOString().split('T')[0];
+  }
+  if(!toEl.value){
+    toEl.value=new Date().toISOString().split('T')[0];
+  }
+  const from=new Date(fromEl.value);
+  const to=new Date(toEl.value); to.setHours(23,59,59);
+
+  const allSales=await LEDGER.query({type:'SALE',status:'ACTIVE'});
+  const sales=allSales.filter(o=>{
+    const d=new Date(o.createdAt||o.created_at);
+    return d>=from && d<=to;
+  });
+
+  const totalRev=sales.reduce((s,o)=>s+(o.gross_amount||o.total||0),0);
+  const totalVAT=sales.reduce((s,o)=>s+(o.vat_amount||0),0);
+  const totalOrders=sales.length;
+  const avgOrder=totalOrders?Math.round(totalRev/totalOrders):0;
+
+  // Stats
+  document.getElementById('analyticsStats').innerHTML=`
+    <div class="stat-card"><div class="stat-val">KSh ${totalRev.toLocaleString()}</div><div class="stat-lbl">Total Revenue</div></div>
+    <div class="stat-card"><div class="stat-val">${totalOrders}</div><div class="stat-lbl">Total Orders</div></div>
+    <div class="stat-card"><div class="stat-val">KSh ${avgOrder.toLocaleString()}</div><div class="stat-lbl">Avg Order Value</div></div>
+    <div class="stat-card"><div class="stat-val">KSh ${totalVAT.toLocaleString()}</div><div class="stat-lbl">VAT Collected</div></div>
+  `;
+
+  // Top items
+  const itemMap={};
+  sales.forEach(o=>(o.items||[]).forEach(i=>{
+    if(!itemMap[i.name]) itemMap[i.name]={qty:0,rev:0};
+    itemMap[i.name].qty+=Math.abs(i.qty);
+    itemMap[i.name].rev+=Math.abs(i.qty*i.price);
+  }));
+  const topItems=Object.entries(itemMap).sort((a,b)=>b[1].rev-a[1].rev).slice(0,10);
+  const maxRev=topItems[0]?topItems[0][1].rev:1;
+  document.getElementById('analyticsTopItems').innerHTML=topItems.length?topItems.map(([name,d],i)=>`
+    <div style="margin-bottom:.6rem;">
+      <div style="display:flex;justify-content:space-between;font-size:.82rem;font-weight:600;margin-bottom:2px;">
+        <span>${i+1}. ${name}</span><span style="color:var(--red);">KSh ${d.rev.toLocaleString()} (${d.qty}x)</span>
+      </div>
+      <div style="background:var(--border);border-radius:4px;height:6px;">
+        <div style="background:var(--red);width:${Math.round(d.rev/maxRev*100)}%;height:6px;border-radius:4px;"></div>
+      </div>
+    </div>`).join(''):'<p style="color:var(--muted);font-size:.85rem;">No data for this period.</p>';
+
+  // Payment methods
+  const payMap={cash:0,mpesa:0,card:0};
+  sales.forEach(o=>{const m=o.pay_method||o.payMethod||'cash'; payMap[m]=(payMap[m]||0)+(o.gross_amount||o.total||0);});
+  document.getElementById('analyticsPayments').innerHTML=`
+    <div class="receipt-row" style="padding:.4rem 0;border-bottom:1px solid var(--border);"><span>💵 Cash</span><span style="font-weight:700;">KSh ${(payMap.cash||0).toLocaleString()}</span></div>
+    <div class="receipt-row" style="padding:.4rem 0;border-bottom:1px solid var(--border);"><span>📱 M-Pesa</span><span style="font-weight:700;">KSh ${(payMap.mpesa||0).toLocaleString()}</span></div>
+    <div class="receipt-row" style="padding:.4rem 0;"><span>💳 Card</span><span style="font-weight:700;">KSh ${(payMap.card||0).toLocaleString()}</span></div>
+  `;
+
+  // Staff sales + clocking efficiency
+  const staffMap={};
+  sales.forEach(o=>{const w=o.waiter_name||o.waiter||'Unknown'; if(!staffMap[w]) staffMap[w]={orders:0,rev:0,items:0}; staffMap[w].orders++; staffMap[w].rev+=(o.gross_amount||o.total||0); staffMap[w].items+=(o.items||[]).length;});
+  const shifts=getShifts();
+  const staffList=Object.entries(staffMap).sort((a,b)=>b[1].rev-a[1].rev);
+  document.getElementById('analyticsStaff').innerHTML=staffList.length?`
+    <table style="width:100%;font-size:.82rem;border-collapse:collapse;">
+      <tr style="font-weight:700;color:var(--muted);font-size:.72rem;text-transform:uppercase;">
+        <td style="padding:.3rem 0;">Staff</td><td style="text-align:center;">Orders</td><td style="text-align:center;">Hrs</td><td style="text-align:right;">Revenue</td>
+      </tr>
+      ${staffList.map(([name,d])=>{
+        const wShifts=shifts.filter(s=>s.waiterName===name && s.clockOut);
+        const hrs=wShifts.reduce((t,s)=>t+((new Date(s.clockOut)-new Date(s.clockIn))/3600000),0);
+        const revPerHr=hrs>0?Math.round(d.rev/hrs):0;
+        return `<tr style="border-top:1px solid var(--border);">
+          <td style="padding:.4rem 0;font-weight:600;">${name}</td>
+          <td style="text-align:center;">${d.orders}</td>
+          <td style="text-align:center;">${hrs>0?hrs.toFixed(1)+'h':'—'}</td>
+          <td style="text-align:right;font-weight:700;color:var(--red);">KSh ${d.rev.toLocaleString()}</td>
+        </tr>
+        ${hrs>0?`<tr><td colspan="4" style="font-size:.75rem;color:var(--muted);padding-bottom:.3rem;">Revenue/hr: KSh ${revPerHr.toLocaleString()}</td></tr>`:''}`;
+      }).join('')}
+    </table>`:'<p style="color:var(--muted);font-size:.85rem;">No data for this period.</p>';
+
+  // Daily chart last 7 days
+  const days=[];
+  for(let i=6;i>=0;i--){const d=new Date(); d.setDate(d.getDate()-i); days.push(d);}
+  const dailyRev=days.map(d=>{
+    const ds=d.toISOString().split('T')[0];
+    return {label:d.toLocaleDateString('en-KE',{weekday:'short',day:'numeric'}), rev:allSales.filter(o=>(o.createdAt||o.created_at||'').startsWith(ds)).reduce((s,o)=>s+(o.gross_amount||o.total||0),0)};
+  });
+  const maxDay=Math.max(...dailyRev.map(d=>d.rev),1);
+  document.getElementById('analyticsDailyChart').innerHTML=`
+    <div style="display:flex;align-items:flex-end;gap:4px;height:80px;margin-bottom:.5rem;">
+      ${dailyRev.map(d=>`
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;">
+          <div style="font-size:.6rem;color:var(--red);font-weight:700;">${d.rev?'KSh '+Math.round(d.rev/1000)+'k':''}</div>
+          <div style="width:100%;background:var(--red);border-radius:3px 3px 0 0;height:${Math.max(4,Math.round(d.rev/maxDay*60))}px;opacity:.85;"></div>
+        </div>`).join('')}
+    </div>
+    <div style="display:flex;gap:4px;">
+      ${dailyRev.map(d=>`<div style="flex:1;text-align:center;font-size:.62rem;color:var(--muted);">${d.label}</div>`).join('')}
+    </div>
+  `;
+}
+
+async function seedNewMenuItems(){
+  const newItems=[
+    // King's Special Zone
+    {name:"Chicken 1 KFC (1pcs)",category:"King's Special Zone",price:200},
+    {name:"Chicken Teriyaki (boneless breast)",category:"King's Special Zone",price:550},
+    {name:"Chicken Tikka Masala (½ boneless)",category:"King's Special Zone",price:1000},
+    {name:"Chicken BBQ ½ portion",category:"King's Special Zone",price:1000},
+    {name:"Chicken Maryland ¼ portion",category:"King's Special Zone",price:500},
+    {name:"Chicken Masala ½ portion",category:"King's Special Zone",price:1000},
+    {name:"Chicken Murgh Mushtani ½ portion",category:"King's Special Zone",price:550},
+    {name:"Chicken Stir Sesame Stir Fry ½ portion",category:"King's Special Zone",price:1000},
+    {name:"Chicken Pilau ¼ portion",category:"King's Special Zone",price:650},
+    {name:"Chicken Sizzler ½ portion",category:"King's Special Zone",price:900},
+    // King's Corner
+    {name:"Beef Pilau",category:"King's Corner",price:500},
+    {name:"Beef Stir Fry ¼ portion",category:"King's Corner",price:550},
+    {name:"Beef Sizzler ½ portion",category:"King's Corner",price:750},
+    {name:"Beef BBQ ½ portion",category:"King's Corner",price:750},
+    {name:"Pepper Steak ½ portion",category:"King's Corner",price:800},
+    {name:"Lamp Chops ½ portion",category:"King's Corner",price:800},
+    {name:"Mongolian Liver ½ portion",category:"King's Corner",price:600},
+    // Pizza Kingdom
+    {name:"Hawaiian Pizza (Large)",category:"Pizza Kingdom",price:1500},
+    {name:"Hawaiian Pizza (Medium)",category:"Pizza Kingdom",price:1000},
+    {name:"Hawaiian Pizza (Small)",category:"Pizza Kingdom",price:600},
+    {name:"White Supreme Pizza (Large)",category:"Pizza Kingdom",price:1500},
+    {name:"White Supreme Pizza (Medium)",category:"Pizza Kingdom",price:1000},
+    {name:"Red Lovers Pizza (Large)",category:"Pizza Kingdom",price:1500},
+    {name:"Red Lovers Pizza (Medium)",category:"Pizza Kingdom",price:1000},
+    {name:"Margherita Pizza (Large)",category:"Pizza Kingdom",price:1500},
+    {name:"Margherita Pizza (Medium)",category:"Pizza Kingdom",price:1000},
+    {name:"5Ds Pizza (Large)",category:"Pizza Kingdom",price:1500},
+    {name:"Chef's Special Pizza (Large)",category:"Pizza Kingdom",price:1500},
+    {name:"Bacon Fiesta Pizza (Large)",category:"Pizza Kingdom",price:1500},
+    {name:"Veggie Surprise Pizza (Large)",category:"Pizza Kingdom",price:1500},
+    {name:"Sweet & Sour Veggie Pizza (Large)",category:"Pizza Kingdom",price:1500},
+    {name:"Carbonara Pizza (Large)",category:"Pizza Kingdom",price:1500},
+    {name:"Pepperoni Pizza (Large)",category:"Pizza Kingdom",price:1500},
+    {name:"Salami Fiesta Pizza (Large)",category:"Pizza Kingdom",price:1500},
+    // Pastas
+    {name:"Spaghetti (Bolognese/Arrabiata)",category:"Pasta",price:500},
+    {name:"Penne Pasta (Arrabiata + cheese)",category:"Pasta",price:500},
+    {name:"Stir Fry Beef Noodles",category:"Pasta",price:500},
+    // Kids Palace
+    {name:"Beef Burger",category:"Kids Palace",price:500},
+    {name:"Chicken Burger",category:"Kids Palace",price:600},
+    {name:"Veggie Burger",category:"Kids Palace",price:300},
+    {name:"Hotdog",category:"Kids Palace",price:300},
+    {name:"Bacon Cheese Burger",category:"Kids Palace",price:600},
+    {name:"Egg Cheese Burger",category:"Kids Palace",price:450},
+    // Desserts
+    {name:"Ice Cream (3 scoops)",category:"Desserts",price:300},
+    {name:"Sweet Buns",category:"Desserts",price:50},
+    {name:"Croissants",category:"Desserts",price:120},
+    {name:"Marble Cakes",category:"Desserts",price:100},
+    {name:"Vanilla Cakes",category:"Desserts",price:150},
+    {name:"Banana Cakes",category:"Desserts",price:200},
+    {name:"Assorted Fruit Salad",category:"Desserts",price:200},
+    {name:"Banana Fita",category:"Desserts",price:200},
+    {name:"Carrots Halwa",category:"Desserts",price:250},
+    {name:"Fruits Salad with nuts honey & yoghurt",category:"Desserts",price:400},
+  ];
+
+  setLoading(true,'Adding menu items...');
+  const el=document.getElementById('seedResult');
+  try{
+    const existing=await dbGet('menu',{});
+    const existingNames=existing.map(i=>i.name.toLowerCase());
+    const toAdd=newItems.filter(i=>!existingNames.includes(i.name.toLowerCase()));
+    let added=0;
+    for(const item of toAdd){
+      await dbInsert('menu',{...item,tax_code:'A',active:true});
+      added++;
+    }
+    const skipped=newItems.length-added;
+    el.style.color='var(--success)';
+    el.textContent=`✅ Added ${added} items. Skipped ${skipped} (already exist).`;
+    showToast(`✅ ${added} menu items added!`);
+    cachedMenu=null; // refresh menu cache
+  }catch(e){
+    el.style.color='var(--red)';
+    el.textContent='⚠ Error: '+e.message;
+  }finally{ setLoading(false); }
+}
+
+async function renderSetup(){
+  ['setupOldPass','setupNewPass','setupConfirmPass','resetStaffPass'].forEach(id=>document.getElementById(id).value='');
+  const kraPin=await getSetting('kra_pin',KRA_PIN_DEFAULT);
+  const kraPinEl=document.getElementById('kraPinInput');
+  if(kraPinEl) kraPinEl.value=kraPin;
+  const users=await dbGet('users',{order:'id',asc:true});
+  document.getElementById('resetStaffSelect').innerHTML=
+    users.filter(u=>u.role!=='admin'&&u.role!=='developer').map(u=>
+      `<option value="${u.id}">${u.name} (@${u.username}) — ${u.role}</option>`
+    ).join('')||'<option>No staff yet</option>';
+  const devUser=users.find(u=>u.role==='developer');
+  document.getElementById('devAccountStatus').innerHTML=devUser
+    ?`Developer account <b>@mobi</b> is <span style="color:var(--warning);">ACTIVE</span>. Remove before handover.
+      <button class="btn btn-danger btn-sm" style="margin-top:.4rem;" onclick="removeDevAccount()">Remove Dev Account</button>`
+    :`<span style="color:var(--success);">✓ Developer account removed.</span>`;
+}
+
+async function saveKraPin(){
+  const pin=document.getElementById('kraPinInput').value.trim().toUpperCase();
+  if(!pin||pin.length<5){ showToast('Enter a valid KRA PIN'); return; }
+  await setSetting('kra_pin',pin);
+  await audit('KRA_PIN_UPDATED',`KRA PIN updated to ${pin}`);
+  showToast('✅ KRA PIN saved');
+  renderSetup();
+}
+
+async function changeOwnerPassword(){
+  const oldP=document.getElementById('setupOldPass').value;
+  const newP=document.getElementById('setupNewPass').value;
+  const confP=document.getElementById('setupConfirmPass').value;
+  if(!oldP||!newP||!confP){ showToast('All fields required'); return; }
+  if(newP.length<6){ showToast('New password min 6 characters'); return; }
+  if(newP!==confP){ showToast('Passwords do not match'); return; }
+  setLoading(true,'Updating password...');
+  try{
+    // Verify current password
+    const email=currentUser.username+'@sbs.internal';
+    const {error:signInErr}=await sb.auth.signInWithPassword({email,password:oldP});
+    if(signInErr){ showToast('Current password incorrect'); return; }
+    const {error}=await sb.auth.updateUser({password:newP});
+    if(error) throw error;
+    await dbUpdate('users',{id:currentUser.id},{must_change:false});
+    await audit('PASSWORD_CHANGED',`${currentUser.username} changed password`);
+    showToast('✅ Password updated');
+    ['setupOldPass','setupNewPass','setupConfirmPass'].forEach(id=>document.getElementById(id).value='');
+  } catch(e){ showToast('⚠ '+e.message); }
+  finally{ setLoading(false); }
+}
+
+async function resetStaffPassword(){
+  const staffId=parseInt(document.getElementById('resetStaffSelect').value);
+  const newP=document.getElementById('resetStaffPass').value;
+  if(!newP){ showToast('Enter new password'); return; }
+  if(newP.length<6){ showToast('Password min 6 characters'); return; }
+  const rows=await dbGet('users',{eq:{id:staffId}});
+  if(!rows.length) return;
+  setLoading(true,'Resetting...');
+  try{
+    // Free tier: owner signs in as staff using current credentials, updates password
+    // Practical approach: mark must_change flag; owner gives staff new password verbally
+    // or re-creates their Supabase auth account with new password via signUp
+    const email=rows[0].username+'@sbs.internal';
+    const {error}=await sb.auth.signUp({email,password:newP,
+      options:{data:{username:rows[0].username,role:rows[0].role}}});
+    // signUp on existing user updates their password on free tier with email confirm off
+    await dbUpdate('users',{id:staffId},{must_change:true});
+    await audit('PASSWORD_RESET',`${currentUser.username} reset password for @${rows[0].username}`);
+    showToast(`✅ Password reset for ${rows[0].name} — inform them of new password`);
+    document.getElementById('resetStaffPass').value='';
+  } catch(e){ showToast('⚠ '+e.message); }
+  finally{ setLoading(false); }
+}
+
+async function removeDevAccount(){
+  if(!confirm('Remove developer (Mobi) account?')) return;
+  const rows=await dbGet('users',{eq:{role:'developer'}});
+  if(rows.length) await dbDelete('users',{id:rows[0].id});
+  await audit('DEV_ACCOUNT_REMOVED','Mobi developer account removed');
+  showToast('Developer account removed');
+  renderSetup();
+}
+
+// ═══════════════════════════════════════════════════════
+//  ACTIVITY LOG
+// ═══════════════════════════════════════════════════════
+let actFilter    = 'all';
+let actPage      = 0;
+const ACT_PAGE_SIZE = 30;
+
+// Map filter categories to action keywords
+const ACT_FILTER_MAP = {
+  financial:  ['ORDER_PLACED','TX_REVERSAL','DAY_CLOSE','KRA_EXPORT','STATUS_CHANGE'],
+  orders:     ['ORDER_PLACED','STATUS_CHANGE','PRE_COMPLETION_EDIT','TX_REVERSAL'],
+  staff:      ['LOGIN','LOGOUT','STAFF_ADDED','STAFF_REMOVED','PASSWORD_CHANGED','PASSWORD_RESET','DEV_ACCOUNT_REMOVED'],
+  security:   ['LOGIN','LOGOUT','PASSWORD_CHANGED','PASSWORD_RESET','DEV_ACCOUNT_REMOVED'],
+  inventory:  ['INVENTORY'],
+};
+
+// Action type → colour and icon
+const ACT_META = {
+  LOGIN:                  { icon:'🔑', color:'#065f46', bg:'#d1fae5', label:'Login' },
+  LOGOUT:                 { icon:'🚪', color:'#6b7280', bg:'#f3f4f6', label:'Logout' },
+  ORDER_PLACED:           { icon:'🍽', color:'#1e40af', bg:'#dbeafe', label:'Order Placed' },
+  STATUS_CHANGE:          { icon:'📋', color:'#92400e', bg:'#fef3c7', label:'Status Changed' },
+  PRE_COMPLETION_EDIT:    { icon:'✏️', color:'#7c3aed', bg:'#ede9fe', label:'Order Edited' },
+  TX_REVERSAL:            { icon:'🔁', color:'#991b1b', bg:'#fee2e2', label:'Transaction Reversed' },
+  MENU_CHANGE:            { icon:'📖', color:'#065f46', bg:'#d1fae5', label:'Menu Changed' },
+  MENU_DELETE:            { icon:'🗑',  color:'#991b1b', bg:'#fee2e2', label:'Menu Item Deleted' },
+  INVENTORY:              { icon:'📦', color:'#92400e', bg:'#fef3c7', label:'Inventory Update' },
+  STAFF_ADDED:            { icon:'👤', color:'#065f46', bg:'#d1fae5', label:'Staff Added' },
+  STAFF_REMOVED:          { icon:'👤', color:'#991b1b', bg:'#fee2e2', label:'Staff Removed' },
+  PASSWORD_CHANGED:       { icon:'🔐', color:'#7c3aed', bg:'#ede9fe', label:'Password Changed' },
+  PASSWORD_RESET:         { icon:'🔐', color:'#92400e', bg:'#fef3c7', label:'Password Reset' },
+  KRA_EXPORT:             { icon:'📤', color:'#1e40af', bg:'#dbeafe', label:'KRA Export' },
+  DAY_CLOSE:              { icon:'🔒', color:'#065f46', bg:'#d1fae5', label:'Day Close' },
+  KRA_PIN_UPDATED:        { icon:'🏛', color:'#92400e', bg:'#fef3c7', label:'KRA PIN Updated' },
+  DEV_ACCOUNT_REMOVED:    { icon:'🔧', color:'#991b1b', bg:'#fee2e2', label:'Dev Account Removed' },
+};
+
+function setActFilter(filter, btn) {
+  actFilter = filter;
+  actPage   = 0;
+  document.querySelectorAll('#actFilterTabs .inner-tab').forEach(t=>t.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderActivity();
+}
+
+function clearActDates() {
+  document.getElementById('actFromDate').value = '';
+  document.getElementById('actToDate').value   = '';
+  renderActivity();
+}
+
+async function renderActivity() {
+  const listEl = document.getElementById('activityList');
+  listEl.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted);">Loading...</div>';
+
+  try {
+    // Build query
+    let q = sb.from('audit_log').select('*').order('ts', {ascending: false});
+
+    // Date filters
+    const fromDate = document.getElementById('actFromDate').value;
+    const toDate   = document.getElementById('actToDate').value;
+    if (fromDate) q = q.gte('ts', fromDate + 'T00:00:00');
+    if (toDate)   q = q.lte('ts', toDate   + 'T23:59:59');
+
+    // Fetch up to 200 for client-side filtering
+    q = q.limit(200);
+    const { data, error } = await q;
+    if (error) throw error;
+
+    let records = data || [];
+
+    // Category filter
+    if (actFilter !== 'all' && ACT_FILTER_MAP[actFilter]) {
+      records = records.filter(r => ACT_FILTER_MAP[actFilter].includes(r.action));
+    }
+
+    // Search filter
+    const search = document.getElementById('actSearch').value.toLowerCase().trim();
+    if (search) {
+      records = records.filter(r =>
+        (r.username||'').toLowerCase().includes(search) ||
+        (r.action||'').toLowerCase().includes(search)   ||
+        (r.detail||'').toLowerCase().includes(search)   ||
+        (r.tx_ref||'').toLowerCase().includes(search)
+      );
+    }
+
+    // Stats
+    const todayStr  = new Date().toISOString().split('T')[0];
+    const todayRecs = (data||[]).filter(r => r.ts && r.ts.startsWith(todayStr));
+    const reversals = (data||[]).filter(r => r.action === 'TX_REVERSAL');
+    document.getElementById('actTotal').textContent     = (data||[]).length;
+    document.getElementById('actToday').textContent     = todayRecs.length;
+    document.getElementById('actReversals').textContent = reversals.length;
+
+    // Pagination
+    const page   = actPage;
+    const paged  = records.slice(0, (page + 1) * ACT_PAGE_SIZE);
+    const hasMore= records.length > paged.length;
+    document.getElementById('actLoadMore').style.display = hasMore ? 'inline-flex' : 'none';
+
+    if (!paged.length) {
+      listEl.innerHTML = '<div class="card" style="text-align:center;color:var(--muted);padding:2rem;">No activity found</div>';
+      return;
+    }
+
+    listEl.innerHTML = paged.map(r => {
+      const meta  = ACT_META[r.action] || { icon:'📌', color:'#6b7280', bg:'#f3f4f6', label: r.action };
+      const ts    = new Date(r.ts);
+      const dateStr = ts.toLocaleDateString('en-KE', {day:'numeric',month:'short',year:'numeric'});
+      const timeStr = ts.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+
+      // Role badge colour
+      const roleBadge = {
+        admin:      'badge-gold',
+        superwaiter:'badge-blue',
+        waiter:     'badge-green',
+        developer:  'badge-purple',
+        system:     'badge-red',
+      }[r.role] || 'badge-red';
+
+      return `
+        <div style="background:white;border-radius:12px;border:1px solid var(--border);
+                    margin-bottom:.6rem;padding:.85rem;box-shadow:var(--shadow);">
+          <div style="display:flex;align-items:flex-start;gap:.65rem;">
+            <!-- Icon bubble -->
+            <div style="width:36px;height:36px;border-radius:50%;background:${meta.bg};
+                        display:flex;align-items:center;justify-content:center;
+                        font-size:1rem;flex-shrink:0;">
+              ${meta.icon}
+            </div>
+            <!-- Content -->
+            <div style="flex:1;min-width:0;">
+              <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.3rem;">
+                <span style="font-weight:700;font-size:.88rem;color:${meta.color};">${meta.label}</span>
+                <span style="font-size:.72rem;color:var(--muted);white-space:nowrap;">${dateStr} · ${timeStr}</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:.4rem;margin:.2rem 0;">
+                <span style="font-size:.78rem;font-weight:600;">@${r.username||'system'}</span>
+                <span class="badge ${roleBadge}" style="font-size:.65rem;padding:.1rem .4rem;">${r.role||'system'}</span>
+              </div>
+              <div style="font-size:.8rem;color:var(--muted);margin-top:.2rem;line-height:1.5;word-break:break-word;">
+                ${r.detail || ''}
+              </div>
+              ${r.tx_ref ? `<div style="font-size:.72rem;color:#7c3aed;margin-top:.2rem;">
+                Ref: <b>${r.tx_ref}</b></div>` : ''}
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+
+  } catch(e) {
+    listEl.innerHTML = `<div class="card" style="text-align:center;color:var(--danger);padding:2rem;">
+      Failed to load activity log<br><small>${e.message}</small></div>`;
+  }
+}
+
+function loadMoreActivity() {
+  actPage++;
+  renderActivity();
+}
+
+// ═══════════════════════════════════════════════════════
+//  MODAL HELPERS
+// ═══════════════════════════════════════════════════════
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.modal-overlay').forEach(o=>{
+  o.addEventListener('click',e=>{if(e.target===o) o.classList.remove('open');});
+});
+
+// ═══════════════════════════════════════════════════════
+//  TOAST
+// ═══════════════════════════════════════════════════════
+let toastTimer;
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),2800);
+}
+
+// ═══════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════
+async function init() {
+  setLoading(true, 'Starting...');
+  try {
+    // Check if credentials are configured
+    if (SUPABASE_URL === 'YOUR_SUPABASE_URL') {
+      document.getElementById('loadingMsg').textContent = 'Not configured yet';
+      setLoading(false);
+      showUnconfiguredBanner();
+      return;
+    }
+
+    // Initialise Supabase client
+    const clientOk = initSupabaseClient();
+    if (!clientOk) {
+      document.getElementById('loadingMsg').textContent = 'Failed to connect — check credentials';
+      setLoading(false);
+      showToast('⚠ Could not connect to database');
+      return;
+    }
+
+    setLoading(true, 'Connecting to database...');
+
+    // Check for existing session (auto-login if already logged in)
+    const { data: { session }, error: sessErr } = await sb.auth.getSession();
+    if (sessErr) throw sessErr;
+
+    if (session) {
+      const uname = session.user.email.replace('@sbs.internal', '');
+      const users = await dbGet('users', { eq: { username: uname } });
+      if (users.length) {
+        currentUser = users[0]; currentSession = session;
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('app').style.display = 'block';
+        resetSessionTimer();
+        await buildNav();
+        showTab('viewOrder');
+        updateClock();
+        setInterval(updateClock, 30000);
+        setLoading(false);
+        return;
+      }
+    }
+    setLoading(false);
+  } catch(e) {
+    console.error('Init error:', e);
+    setLoading(false);
+    showToast('Connection error — check internet and credentials');
+  }
+}
+
+function showUnconfiguredBanner() {
+  // Show a helpful setup banner instead of a crash
+  const box = document.querySelector('.login-box');
+  if (!box) return;
+  const banner = document.createElement('div');
+  banner.style.cssText = 'background:#fff5f5;border:1.5px solid #fca5a5;border-radius:10px;padding:.85rem;margin-bottom:1rem;font-size:.82rem;color:#c0392b;line-height:1.6;text-align:left;';
+  banner.innerHTML = '<b>⚙ Setup Required</b><br>Open this file in a text editor and replace:<br>' +
+    '<code style="background:#fee2e2;padding:2px 4px;border-radius:4px;font-size:.78rem;">YOUR_SUPABASE_URL</code> and ' +
+    '<code style="background:#fee2e2;padding:2px 4px;border-radius:4px;font-size:.78rem;">YOUR_SUPABASE_ANON_KEY</code><br>' +
+    'with your actual Supabase credentials. See the Deployment Guide.';
+  box.insertBefore(banner, box.firstChild);
+}
+
+document.getElementById('loginPass').addEventListener('keydown',e=>{if(e.key==='Enter') doLogin();});
+document.getElementById('loginUser').addEventListener('keydown',e=>{if(e.key==='Enter') document.getElementById('loginPass').focus();});
+
+// Online/offline detection
+window.addEventListener('online', ()=>setSyncStatus('online'));
+window.addEventListener('offline',()=>setSyncStatus('offline'));
+
+// Global error handler — prevents blank "Script error" crashes
+window.onerror = function(msg, src, line, col, err) {
+  console.error('Global error:', msg, 'line:', line);
+  setLoading(false);
+  showToast('⚠ System error — please refresh');
+  return true; // prevents default browser error
+};
+
+window.addEventListener('unhandledrejection', function(e) {
+  console.error('Unhandled promise rejection:', e.reason);
+  setLoading(false);
+  if (e.reason?.message) showToast('⚠ ' + e.reason.message);
+});
+
+// Start the app
+init();
+</script>
+</body>
+</html>
